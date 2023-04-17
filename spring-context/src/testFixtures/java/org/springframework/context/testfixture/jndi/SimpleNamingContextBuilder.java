@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package org.springframework.tests.mock.jndi;
+package org.springframework.context.testfixture.jndi;
 
 import java.util.Hashtable;
+
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.spi.InitialContextFactory;
@@ -26,23 +27,29 @@ import javax.naming.spi.NamingManager;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.lang.Nullable;
+import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.ReflectionUtils;
 
 /**
- * Simple implementation of a JNDI naming context builder.
+ * Copy of the standard {@link org.springframework.mock.jndi.SimpleNamingContextBuilder}
+ * for testing purposes.
+ *
+ * <p>Simple implementation of a JNDI naming context builder.
  *
  * <p>Mainly targeted at test environments, where each test case can
  * configure JNDI appropriately, so that {@code new InitialContext()}
  * will expose the required objects. Also usable for standalone applications,
  * e.g. for binding a JDBC DataSource to a well-known JNDI location, to be
- * able to use traditional Java EE data access code outside of a Java EE
+ * able to use traditional Java EE data access code outside a Java EE
  * container.
  *
  * <p>There are various choices for DataSource implementations:
  * <ul>
  * <li>{@code SingleConnectionDataSource} (using the same Connection for all getConnection calls)
  * <li>{@code DriverManagerDataSource} (creating a new Connection on each getConnection call)
- * <li>Apache's Jakarta Commons DBCP offers {@code org.apache.commons.dbcp.BasicDataSource} (a real pool)
+ * <li>Apache's Commons DBCP offers {@code org.apache.commons.dbcp.BasicDataSource} (a real pool)
  * </ul>
  *
  * <p>Typical usage in bootstrap code:
@@ -54,7 +61,7 @@ import org.springframework.util.ClassUtils;
  * builder.activate();</pre>
  *
  * Note that it's impossible to activate multiple builders within the same JVM,
- * due to JNDI restrictions. Thus to configure a fresh builder repeatedly, use
+ * due to JNDI restrictions. Thus, to configure a fresh builder repeatedly, use
  * the following code to get a reference to either an already activated builder
  * or a newly activated one:
  *
@@ -80,7 +87,8 @@ import org.springframework.util.ClassUtils;
  */
 public class SimpleNamingContextBuilder implements InitialContextFactoryBuilder {
 
-	/** An instance of this class bound to JNDI */
+	/** An instance of this class bound to JNDI. */
+	@Nullable
 	private static volatile SimpleNamingContextBuilder activated;
 
 	private static boolean initialized = false;
@@ -93,13 +101,14 @@ public class SimpleNamingContextBuilder implements InitialContextFactoryBuilder 
 	 * @return the current SimpleNamingContextBuilder instance,
 	 * or {@code null} if none
 	 */
+	@Nullable
 	public static SimpleNamingContextBuilder getCurrentContextBuilder() {
 		return activated;
 	}
 
 	/**
 	 * If no SimpleNamingContextBuilder is already configuring JNDI,
-	 * create and activate one. Otherwise take the existing activate
+	 * create and activate one. Otherwise, take the existing activated
 	 * SimpleNamingContextBuilder, clear it and return it.
 	 * <p>This is mainly intended for test suites that want to
 	 * reinitialize JNDI bindings from scratch repeatedly.
@@ -107,17 +116,18 @@ public class SimpleNamingContextBuilder implements InitialContextFactoryBuilder 
 	 * to control JNDI bindings
 	 */
 	public static SimpleNamingContextBuilder emptyActivatedContextBuilder() throws NamingException {
-		if (activated != null) {
+		SimpleNamingContextBuilder builder = activated;
+		if (builder != null) {
 			// Clear already activated context builder.
-			activated.clear();
+			builder.clear();
 		}
 		else {
 			// Create and activate new context builder.
-			SimpleNamingContextBuilder builder = new SimpleNamingContextBuilder();
+			builder = new SimpleNamingContextBuilder();
 			// The activate() call will cause an assignment to the activated variable.
 			builder.activate();
 		}
-		return activated;
+		return builder;
 	}
 
 
@@ -138,12 +148,10 @@ public class SimpleNamingContextBuilder implements InitialContextFactoryBuilder 
 		logger.info("Activating simple JNDI environment");
 		synchronized (initializationLock) {
 			if (!initialized) {
-				if (NamingManager.hasInitialContextFactoryBuilder()) {
-					throw new IllegalStateException(
+				Assert.state(!NamingManager.hasInitialContextFactoryBuilder(),
 							"Cannot activate SimpleNamingContextBuilder: there is already a JNDI provider registered. " +
 							"Note that JNDI is a JVM-wide service, shared at the JVM system class loader level, " +
 							"with no reset option. As a consequence, a JNDI provider must only be registered once per JVM.");
-				}
 				NamingManager.setInitialContextFactoryBuilder(this);
 				initialized = true;
 			}
@@ -192,7 +200,8 @@ public class SimpleNamingContextBuilder implements InitialContextFactoryBuilder 
 	 * @see SimpleNamingContext
 	 */
 	@Override
-	public InitialContextFactory createInitialContextFactory(Hashtable<?,?> environment) {
+	@SuppressWarnings("unchecked")
+	public InitialContextFactory createInitialContextFactory(@Nullable Hashtable<?,?> environment) {
 		if (activated == null && environment != null) {
 			Object icf = environment.get(Context.INITIAL_CONTEXT_FACTORY);
 			if (icf != null) {
@@ -212,22 +221,16 @@ public class SimpleNamingContextBuilder implements InitialContextFactoryBuilder 
 							"Specified class does not implement [" + InitialContextFactory.class.getName() + "]: " + icf);
 				}
 				try {
-					return (InitialContextFactory) icfClass.newInstance();
+					return (InitialContextFactory) ReflectionUtils.accessibleConstructor(icfClass).newInstance();
 				}
 				catch (Throwable ex) {
-					throw new IllegalStateException("Cannot instantiate specified InitialContextFactory: " + icf, ex);
+					throw new IllegalStateException("Unable to instantiate specified InitialContextFactory: " + icf, ex);
 				}
 			}
 		}
 
 		// Default case...
-		return new InitialContextFactory() {
-			@Override
-			@SuppressWarnings("unchecked")
-			public Context getInitialContext(Hashtable<?,?> environment) {
-				return new SimpleNamingContext("", boundObjects, (Hashtable<String, Object>) environment);
-			}
-		};
+		return env -> new SimpleNamingContext("", this.boundObjects, (Hashtable<String, Object>) env);
 	}
 
 }
