@@ -26,6 +26,10 @@ import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
 import org.springframework.lang.Nullable;
 
 /**
+ * <pre>
+ *     该对象提供了创建Bean、注入Bean、Bena的后置处理器(BeanPostProcessor)、摧毁Bean等方法
+ * </pre>
+ *
  * Extension of the {@link org.springframework.beans.factory.BeanFactory}
  * interface to be implemented by bean factories that are capable of
  * autowiring, provided that they want to expose this functionality for

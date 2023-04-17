@@ -27,7 +27,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 
 /**
- * Spring 框架所有资源的抽象和访问接口
+ * Spring 定义框架所有资源的抽象和访问接口
  *
  * Interface for a resource descriptor that abstracts from the actual
  * type of underlying resource, such as a file or class path resource.

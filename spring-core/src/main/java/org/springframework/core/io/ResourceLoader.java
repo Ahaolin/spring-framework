@@ -22,7 +22,7 @@ import org.springframework.util.ResourceUtils;
 /**
  * Spring 资源加载的统一抽象，具体的资源加载则由相应的实现类来完成，所以我们可以将 ResourceLoader 称作为统一资源定位器。
  *
- * From 《Spring 源码深度解析》：定义资源加载器，主要应用于根据给定的资源文件地址，返回对应的 Resource 。
+ * From 《Spring 源码深度解析》：定义资源加载器，主要应用于根据给定的资源文件地址，返回对应的 Resource,提供了资源加载的方法
  *
  * Strategy interface for loading resources (e.. class path or file system
  * resources). An {@link org.springframework.context.ApplicationContext}
@@ -50,12 +50,13 @@ public interface ResourceLoader {
 
 	/**
      * 根据所提供资源的路径 location 返回 Resource 实例，但是它不确保该 Resource 一定存在，需要调用 `Resource#exist()` 方法来判断。
-     *
-     *     * 该方法支持以下模式的资源加载：
-     *         * URL位置资源，如 `"file:C:/test.dat"`
-     *         * ClassPath位置资源，如”classpath:test.dat”
-     *         * 相对路径资源，如 `"WEB-INF/test.dat`" ，此时返回的Resource实 例根据实现不同而不同。
-     *     * 该方法的主要实现是在其子类 DefaultResourceLoader 中实现，具体过程我们在分析 DefaultResourceLoader 时做详细说明。
+     * <pre>
+     * 该方法支持以下模式的资源加载：
+     *     URL位置资源，如 `"file:C:/test.dat"`
+     *     ClassPath位置资源，如”classpath:test.dat”
+     *     相对路径资源，如 `"WEB-INF/test.dat`" ，此时返回的Resource实 例根据实现不同而不同。
+     *  该方法的主要实现是在其子类 DefaultResourceLoader 中实现，具体过程我们在分析 DefaultResourceLoader 时做详细说明。
+     * </pre>
      *
 	 * Return a Resource handle for the specified resource location.
 	 * <p>The handle should always be a reusable resource descriptor,

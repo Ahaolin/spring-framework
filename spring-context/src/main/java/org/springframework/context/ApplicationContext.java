@@ -24,6 +24,10 @@ import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.lang.Nullable;
 
 /**
+ * <pre>
+ *     应用上下文核心接口,各类上下文实现类都是它的实现类
+ * </pre>
+ *
  * Central interface to provide configuration for an application.
  * This is read-only while the application is running, but may be
  * reloaded if the implementation supports this.

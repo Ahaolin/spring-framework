@@ -27,6 +27,10 @@ import java.io.InputStream;
 import java.net.*;
 
 /**
+ * <pre>
+ *     对 `java.net.URL`类型资源的封装。内部委派 URL 进行具体的资源操作。
+ * </pre>
+ *
  * {@link Resource} implementation for {@code java.net.URL} locators.
  * Supports resolution as a {@code URL} and also as a {@code File} in
  * case of the {@code "file:"} protocol.

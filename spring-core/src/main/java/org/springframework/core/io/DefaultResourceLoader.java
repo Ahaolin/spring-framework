@@ -55,9 +55,18 @@ public class DefaultResourceLoader implements ResourceLoader {
 
     /**
      * ProtocolResolver 集合
+     * <pre>
+     *   协议解析器集合,ProtocolResolver定义了从字符串到Resource的解析函数。
+     * </pre>
      */
 	private final Set<ProtocolResolver> protocolResolvers = new LinkedHashSet<>(4);
 
+    /**
+     * 资源缓存
+     *  <pre>
+     *      protocolResolvers解析的数据会放到其中
+     *  </pre>
+     */
 	private final Map<Class<?>, Map<Resource, ?>> resourceCaches = new ConcurrentHashMap<>(4);
 
 	/**
@@ -181,7 +190,7 @@ public class DefaultResourceLoader implements ResourceLoader {
 	}
 
 	/**
-     * 返回 ClassPathContextResource 类型的资源
+     * 返回 ClassPathContextResource 类型的资源 <br>
      *
 	 * Return a Resource handle for the resource at the given path.
 	 * <p>The default implementation supports class path locations. This should

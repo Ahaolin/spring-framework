@@ -17,6 +17,8 @@
 package org.springframework.context;
 
 /**
+ * <pre> 提供了关于容器的生命周期方法 </pre>
+ *
  * A common interface defining methods for start/stop lifecycle control.
  * The typical use case for this is to control asynchronous processing.
  * <b>NOTE: This interface does not imply specific auto-startup semantics.

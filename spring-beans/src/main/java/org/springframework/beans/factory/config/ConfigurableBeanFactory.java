@@ -31,6 +31,10 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.StringValueResolver;
 
 /**
+ * <pre>
+ *     该对象提供了对BeanFactory的设置方法，在其中可以设置关于类加载器、转换服务等配置信息。
+ * </pre>
+ *
  * Configuration interface to be implemented by most bean factories. Provides
  * facilities to configure a bean factory, in addition to the bean factory
  * client methods in the {@link org.springframework.beans.factory.BeanFactory}
