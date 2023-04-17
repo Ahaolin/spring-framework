@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -82,7 +82,7 @@ public interface BeanWrapper extends ConfigurablePropertyAccessor {
 	 * Obtain the property descriptor for a specific property
 	 * of the wrapped object.
 	 * @param propertyName the property to obtain the descriptor for
-	 * (may be a nested path, but no indexed/mapped property)
+	 * (may be a nested path, but not an indexed/mapped property)
 	 * @return the property descriptor for the specified property
 	 * @throws InvalidPropertyException if there is no such property
 	 */

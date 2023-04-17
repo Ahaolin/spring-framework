@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -272,15 +272,7 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 				}
 			}
 		}
-		catch (AmbiguousBindingException ambigEx) {
-			if (this.raiseExceptions) {
-				throw ambigEx;
-			}
-			else {
-				return null;
-			}
-		}
-		catch (IllegalArgumentException ex) {
+		catch (AmbiguousBindingException | IllegalArgumentException ex) {
 			if (this.raiseExceptions) {
 				throw ex;
 			}
@@ -478,22 +470,10 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 	 */
 	@Nullable
 	private String maybeExtractVariableName(@Nullable String candidateToken) {
-		if (!StringUtils.hasLength(candidateToken)) {
-			return null;
-		}
-		if (Character.isJavaIdentifierStart(candidateToken.charAt(0)) &&
-				Character.isLowerCase(candidateToken.charAt(0))) {
-			char[] tokenChars = candidateToken.toCharArray();
-			for (char tokenChar : tokenChars) {
-				if (!Character.isJavaIdentifierPart(tokenChar)) {
-					return null;
-				}
-			}
+		if (AspectJProxyUtils.isVariableName(candidateToken)) {
 			return candidateToken;
 		}
-		else {
-			return null;
-		}
+		return null;
 	}
 
 	/**
@@ -645,7 +625,7 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 			StringBuilder sb = new StringBuilder();
 			if (bodyStart >= 0 && bodyStart != (currentToken.length() - 1)) {
 				sb.append(currentToken.substring(bodyStart + 1));
-				sb.append(" ");
+				sb.append(' ');
 			}
 			numTokensConsumed++;
 			int currentIndex = startIndex + numTokensConsumed;
@@ -656,7 +636,7 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 				}
 
 				if (tokens[currentIndex].endsWith(")")) {
-					sb.append(tokens[currentIndex].substring(0, tokens[currentIndex].length() - 1));
+					sb.append(tokens[currentIndex], 0, tokens[currentIndex].length() - 1);
 					return new PointcutBody(numTokensConsumed, sb.toString().trim());
 				}
 
@@ -665,7 +645,7 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 					toAppend = toAppend.substring(1);
 				}
 				sb.append(toAppend);
-				sb.append(" ");
+				sb.append(' ');
 				currentIndex++;
 				numTokensConsumed++;
 			}

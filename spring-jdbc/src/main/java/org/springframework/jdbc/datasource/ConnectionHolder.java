@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,13 +16,13 @@
 
 package org.springframework.jdbc.datasource;
 
-import org.springframework.lang.Nullable;
-import org.springframework.transaction.support.ResourceHolderSupport;
-import org.springframework.util.Assert;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Savepoint;
+
+import org.springframework.lang.Nullable;
+import org.springframework.transaction.support.ResourceHolderSupport;
+import org.springframework.util.Assert;
 
 /**
  * Resource holder wrapping a JDBC {@link Connection}.
@@ -209,7 +209,6 @@ public class ConnectionHolder extends ResourceHolderSupport {
 	@Override
 	public void clear() {
 		super.clear();
-		// 重置事务未开启
 		this.transactionActive = false;
 		this.savepointsSupported = null;
 		this.savepointCounter = 0;

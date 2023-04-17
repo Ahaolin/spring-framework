@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,19 +24,15 @@ import org.springframework.lang.Nullable;
  * Auto-proxy creator that considers infrastructure Advisor beans only,
  * ignoring any application-defined Advisors.
  *
- * 只扫描 {@link BeanDefinition#ROLE_INFRASTRUCTURE} 定义的 AdvisorAutoProxyCreator 实现类。
- *
  * @author Juergen Hoeller
  * @since 2.0.7
  */
 @SuppressWarnings("serial")
 public class InfrastructureAdvisorAutoProxyCreator extends AbstractAdvisorAutoProxyCreator {
 
-    /**
-     * BeanFactory 对象
-     */
 	@Nullable
 	private ConfigurableListableBeanFactory beanFactory;
+
 
 	@Override
 	protected void initBeanFactory(ConfigurableListableBeanFactory beanFactory) {

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -39,19 +39,13 @@ import org.springframework.util.StringUtils;
  */
 public class BeanDefinitionHolder implements BeanMetadataElement {
 
-    /**
-     * BeanDefinition 对象
-     */
 	private final BeanDefinition beanDefinition;
-    /**
-     * Bean 名字
-     */
+
 	private final String beanName;
-    /**
-     * 别名集合
-     */
+
 	@Nullable
 	private final String[] aliases;
+
 
 	/**
 	 * Create a new BeanDefinitionHolder.
@@ -141,12 +135,10 @@ public class BeanDefinitionHolder implements BeanMetadataElement {
 	 * @see #getAliases()
 	 */
 	public String getShortDescription() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("Bean definition with name '").append(this.beanName).append("'");
-		if (this.aliases != null) {
-			sb.append(" and aliases [").append(StringUtils.arrayToCommaDelimitedString(this.aliases)).append("]");
+		if (this.aliases == null) {
+			return "Bean definition with name '" + this.beanName + "'";
 		}
-		return sb.toString();
+		return "Bean definition with name '" + this.beanName + "' and aliases [" + StringUtils.arrayToCommaDelimitedString(this.aliases) + ']';
 	}
 
 	/**
@@ -156,9 +148,7 @@ public class BeanDefinitionHolder implements BeanMetadataElement {
 	 * @see #getBeanDefinition()
 	 */
 	public String getLongDescription() {
-		StringBuilder sb = new StringBuilder(getShortDescription());
-		sb.append(": ").append(this.beanDefinition);
-		return sb.toString();
+		return getShortDescription() + ": " + this.beanDefinition;
 	}
 
 	/**
@@ -174,7 +164,7 @@ public class BeanDefinitionHolder implements BeanMetadataElement {
 
 
 	@Override
-	public boolean equals(Object other) {
+	public boolean equals(@Nullable Object other) {
 		if (this == other) {
 			return true;
 		}

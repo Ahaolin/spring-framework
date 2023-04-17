@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,6 +26,9 @@ import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
@@ -66,12 +69,11 @@ public abstract class StatementCreatorUtils {
 	 * completely, i.e. to never even attempt to retrieve {@link PreparedStatement#getParameterMetaData()}
 	 * for {@link StatementCreatorUtils#setNull} calls.
 	 * <p>The default is "false", trying {@code getParameterType} calls first and falling back to
-	 * {@link PreparedStatement#setNull} / {@link PreparedStatement#setObject} calls based on well-known
-	 * behavior of common databases. Spring records JDBC drivers with non-working {@code getParameterType}
-	 * implementations and won't attempt to call that method for that driver again, always falling back.
-	 * <p>Consider switching this flag to "true" if you experience misbehavior at runtime, e.g. with
-	 * a connection pool setting back the {@link PreparedStatement} instance in case of an exception
-	 * thrown from {@code getParameterType} (as reported on JBoss AS 7).
+	 * {@link PreparedStatement#setNull} / {@link PreparedStatement#setObject} calls based on
+	 * well-known behavior of common databases.
+	 * <p>Consider switching this flag to "true" if you experience misbehavior at runtime,
+	 * e.g. with connection pool issues in case of an exception thrown from {@code getParameterType}
+	 * (as reported on JBoss AS 7) or in case of performance problems (as reported on PostgreSQL).
 	 */
 	public static final String IGNORE_GETPARAMETERTYPE_PROPERTY_NAME = "spring.jdbc.getParameterType.ignore";
 
@@ -99,6 +101,9 @@ public abstract class StatementCreatorUtils {
 		javaTypeToSqlTypeMap.put(double.class, Types.DOUBLE);
 		javaTypeToSqlTypeMap.put(Double.class, Types.DOUBLE);
 		javaTypeToSqlTypeMap.put(BigDecimal.class, Types.DECIMAL);
+		javaTypeToSqlTypeMap.put(LocalDate.class, Types.DATE);
+		javaTypeToSqlTypeMap.put(LocalTime.class, Types.TIME);
+		javaTypeToSqlTypeMap.put(LocalDateTime.class, Types.TIMESTAMP);
 		javaTypeToSqlTypeMap.put(java.sql.Date.class, Types.DATE);
 		javaTypeToSqlTypeMap.put(java.sql.Time.class, Types.TIME);
 		javaTypeToSqlTypeMap.put(java.sql.Timestamp.class, Types.TIMESTAMP);
@@ -153,7 +158,7 @@ public abstract class StatementCreatorUtils {
 	 * @param ps the prepared statement or callable statement
 	 * @param paramIndex index of the parameter we are setting
 	 * @param sqlType the SQL type of the parameter
-	 * @param inValue the value to set (plain value or a SqlTypeValue)
+	 * @param inValue the value to set (plain value or an SqlTypeValue)
 	 * @throws SQLException if thrown by PreparedStatement methods
 	 * @see SqlTypeValue
 	 */
@@ -171,7 +176,7 @@ public abstract class StatementCreatorUtils {
 	 * @param sqlType the SQL type of the parameter
 	 * @param typeName the type name of the parameter
 	 * (optional, only used for SQL NULL and SqlTypeValue)
-	 * @param inValue the value to set (plain value or a SqlTypeValue)
+	 * @param inValue the value to set (plain value or an SqlTypeValue)
 	 * @throws SQLException if thrown by PreparedStatement methods
 	 * @see SqlTypeValue
 	 */
@@ -191,7 +196,7 @@ public abstract class StatementCreatorUtils {
 	 * (optional, only used for SQL NULL and SqlTypeValue)
 	 * @param scale the number of digits after the decimal point
 	 * (for DECIMAL and NUMERIC types)
-	 * @param inValue the value to set (plain value or a SqlTypeValue)
+	 * @param inValue the value to set (plain value or an SqlTypeValue)
 	 * @throws SQLException if thrown by PreparedStatement methods
 	 * @see SqlTypeValue
 	 */
@@ -266,7 +271,7 @@ public abstract class StatementCreatorUtils {
 				}
 				else if (databaseProductName.startsWith("DB2") ||
 						jdbcDriverName.startsWith("jConnect") ||
-						jdbcDriverName.startsWith("SQLServer")||
+						jdbcDriverName.startsWith("SQLServer") ||
 						jdbcDriverName.startsWith("Apache Derby")) {
 					sqlTypeToUse = Types.VARCHAR;
 				}
@@ -312,7 +317,6 @@ public abstract class StatementCreatorUtils {
 				else {
 					ps.setClob(paramIndex, new StringReader(strVal), strVal.length());
 				}
-				return;
 			}
 			else {
 				// Fallback: setString or setNString binding
@@ -460,11 +464,16 @@ public abstract class StatementCreatorUtils {
 	public static void cleanupParameters(@Nullable Collection<?> paramValues) {
 		if (paramValues != null) {
 			for (Object inValue : paramValues) {
-				if (inValue instanceof DisposableSqlTypeValue) {
-					((DisposableSqlTypeValue) inValue).cleanup();
+				// Unwrap SqlParameterValue first...
+				if (inValue instanceof SqlParameterValue) {
+					inValue = ((SqlParameterValue) inValue).getValue();
 				}
-				else if (inValue instanceof SqlValue) {
+				// Check for disposable value types
+				if (inValue instanceof SqlValue) {
 					((SqlValue) inValue).cleanup();
+				}
+				else if (inValue instanceof DisposableSqlTypeValue) {
+					((DisposableSqlTypeValue) inValue).cleanup();
 				}
 			}
 		}

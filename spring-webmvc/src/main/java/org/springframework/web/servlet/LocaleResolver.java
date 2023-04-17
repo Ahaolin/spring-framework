@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,11 +16,12 @@
 
 package org.springframework.web.servlet;
 
-import org.springframework.lang.Nullable;
+import java.util.Locale;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Locale;
+
+import org.springframework.lang.Nullable;
 
 /**
  * Interface for web-based locale resolution strategies that allows for
@@ -53,18 +54,14 @@ import java.util.Locale;
 public interface LocaleResolver {
 
 	/**
-     * 从请求中，解析出要使用的语言。例如，请求头的 "Accept-Language"
-     *
 	 * Resolve the current locale via the given request.
-	 * Can return a default locale as fallback in any case.
+	 * <p>Can return a default locale as fallback in any case.
 	 * @param request the request to resolve the locale for
 	 * @return the current locale (never {@code null})
 	 */
 	Locale resolveLocale(HttpServletRequest request);
 
 	/**
-     * 设置请求所使用的语言
-     *
 	 * Set the current locale to the given one.
 	 * @param request the request to be used for locale modification
 	 * @param response the response to be used for locale modification

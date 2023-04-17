@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -36,7 +36,7 @@ import org.springframework.util.function.SingletonSupplier;
  * behavior to any bean that carries the {@link Async} annotation at class or
  * method-level by adding a corresponding {@link AsyncAnnotationAdvisor} to the
  * exposed proxy (either an existing AOP proxy or a newly generated proxy that
- * implements all of the target's interfaces).
+ * implements all the target's interfaces).
  *
  * <p>The {@link TaskExecutor} responsible for the asynchronous execution may
  * be provided as well as the annotation type that indicates a method should be

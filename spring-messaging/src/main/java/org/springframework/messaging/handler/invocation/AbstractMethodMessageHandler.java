@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,7 @@ package org.springframework.messaging.handler.invocation;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -26,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -50,6 +53,7 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
 
@@ -106,7 +110,7 @@ public abstract class AbstractMethodMessageHandler<T>
 
 	private final Map<T, HandlerMethod> handlerMethods = new LinkedHashMap<>(64);
 
-	private final MultiValueMap<String, T> destinationLookup = new LinkedMultiValueMap<>(64);
+	private final MultiValueMap<String, T> destinationLookup = new LinkedMultiValueMap<>(48);
 
 	private final Map<Class<?>, AbstractExceptionHandlerMethodResolver> exceptionHandlerCache =
 			new ConcurrentHashMap<>(64);
@@ -309,16 +313,34 @@ public abstract class AbstractMethodMessageHandler<T>
 			Map<Method, T> methods = MethodIntrospector.selectMethods(userType,
 					(MethodIntrospector.MetadataLookup<T>) method -> getMappingForMethod(method, userType));
 			if (logger.isDebugEnabled()) {
-				logger.debug(methods.size() + " message handler methods found on " + userType + ": " + methods);
+				logger.debug(formatMappings(userType, methods));
 			}
 			methods.forEach((key, value) -> registerHandlerMethod(handler, key, value));
 		}
 	}
 
+	private String formatMappings(Class<?> userType, Map<Method, T> methods) {
+		String packageName = ClassUtils.getPackageName(userType);
+		String formattedType = (StringUtils.hasText(packageName) ?
+				Arrays.stream(packageName.split("\\."))
+						.map(packageSegment -> packageSegment.substring(0, 1))
+						.collect(Collectors.joining(".", "", "." + userType.getSimpleName())) :
+				userType.getSimpleName());
+		Function<Method, String> methodFormatter = method -> Arrays.stream(method.getParameterTypes())
+				.map(Class::getSimpleName)
+				.collect(Collectors.joining(",", "(", ")"));
+		return methods.entrySet().stream()
+				.map(e -> {
+					Method method = e.getKey();
+					return e.getValue() + ": " + method.getName() + methodFormatter.apply(method);
+				})
+				.collect(Collectors.joining("\n\t", "\n\t" + formattedType + ":" + "\n\t", ""));
+	}
+
 	/**
 	 * Provide the mapping for a handler method.
 	 * @param method the method to provide a mapping for
-	 * @param handlerType the handler type, possibly a sub-type of the method's declaring class
+	 * @param handlerType the handler type, possibly a subtype of the method's declaring class
 	 * @return the mapping, or {@code null} if the method is not mapped
 	 */
 	@Nullable
@@ -344,9 +366,6 @@ public abstract class AbstractMethodMessageHandler<T>
 		}
 
 		this.handlerMethods.put(mapping, newHandlerMethod);
-		if (logger.isTraceEnabled()) {
-			logger.trace("Mapped \"" + mapping + "\" onto " + newHandlerMethod);
-		}
 
 		for (String pattern : getDirectLookupDestinations(mapping)) {
 			this.destinationLookup.add(pattern, mapping);
@@ -625,9 +644,10 @@ public abstract class AbstractMethodMessageHandler<T>
 		if (method != null) {
 			return new InvocableHandlerMethod(handlerMethod.getBean(), method);
 		}
-		for (MessagingAdviceBean advice : this.exceptionHandlerAdviceCache.keySet()) {
+		for (Map.Entry<MessagingAdviceBean, AbstractExceptionHandlerMethodResolver> entry : this.exceptionHandlerAdviceCache.entrySet()) {
+			MessagingAdviceBean advice = entry.getKey();
 			if (advice.isApplicableToBeanType(beanType)) {
-				resolver = this.exceptionHandlerAdviceCache.get(advice);
+				resolver = entry.getValue();
 				method = resolver.resolveMethod(exception);
 				if (method != null) {
 					return new InvocableHandlerMethod(advice.resolveBean(), method);

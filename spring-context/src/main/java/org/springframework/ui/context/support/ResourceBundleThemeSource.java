@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -87,7 +87,7 @@ public class ResourceBundleThemeSource implements HierarchicalThemeSource, BeanC
 	/**
 	 * Set the prefix that gets applied to the ResourceBundle basenames,
 	 * i.e. the theme names.
-	 * E.g.: basenamePrefix="test.", themeName="theme" -> basename="test.theme".
+	 * E.g.: basenamePrefix="test.", themeName="theme" &rarr; basename="test.theme".
 	 * <p>Note that ResourceBundle names are effectively classpath locations: As a
 	 * consequence, the JDK's standard ResourceBundle treats dots as package separators.
 	 * This means that "test.theme" is effectively equivalent to "test/theme",

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,8 +33,8 @@ public interface ServerHttpAsyncRequestControl {
 	void start();
 
 	/**
-	 * A variation on {@link #start()} that allows specifying a timeout value to use to
-	 * use for asynchronous processing. If {@link #complete()} is not called within the
+	 * A variation on {@link #start()} that allows specifying a timeout value to use
+	 * for asynchronous processing. If {@link #complete()} is not called within the
 	 * specified value, the request times out.
 	 */
 	void start(long timeout);

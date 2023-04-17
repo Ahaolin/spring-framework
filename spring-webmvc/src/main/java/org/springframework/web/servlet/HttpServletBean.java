@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,9 +16,23 @@
 
 package org.springframework.web.servlet;
 
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.beans.*;
+
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.PropertyAccessorFactory;
+import org.springframework.beans.PropertyValue;
+import org.springframework.beans.PropertyValues;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
@@ -32,13 +46,6 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.context.support.ServletContextResourceLoader;
 import org.springframework.web.context.support.StandardServletEnvironment;
-
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Simple extension of {@link javax.servlet.http.HttpServlet} which treats
@@ -81,12 +88,8 @@ public abstract class HttpServletBean extends HttpServlet implements Environment
 	@Nullable
 	private ConfigurableEnvironment environment;
 
-    /**
-     * 必须配置的属性的集合
-     *
-     * 在 {@link ServletConfigPropertyValues} 中，会校验是否有对应的属性
-     */
 	private final Set<String> requiredProperties = new HashSet<>(4);
+
 
 	/**
 	 * Subclasses can invoke this method to specify that this property
@@ -108,7 +111,7 @@ public abstract class HttpServletBean extends HttpServlet implements Environment
 	 * @throws IllegalArgumentException if environment is not assignable to
 	 * {@code ConfigurableEnvironment}
 	 */
-	@Override // 实现自 EnvironmentAware 接口，自动注入
+	@Override
 	public void setEnvironment(Environment environment) {
 		Assert.isInstanceOf(ConfigurableEnvironment.class, environment, "ConfigurableEnvironment required");
 		this.environment = (ConfigurableEnvironment) environment;
@@ -119,9 +122,8 @@ public abstract class HttpServletBean extends HttpServlet implements Environment
 	 * <p>If none specified, a default environment will be initialized via
 	 * {@link #createEnvironment()}.
 	 */
-	@Override // 实现自 EnvironmentCapable 接口
+	@Override
 	public ConfigurableEnvironment getEnvironment() {
-	    // 如果 environment 为空，主动创建
 		if (this.environment == null) {
 			this.environment = createEnvironment();
 		}
@@ -145,21 +147,18 @@ public abstract class HttpServletBean extends HttpServlet implements Environment
 	 */
 	@Override
 	public final void init() throws ServletException {
+
 		// Set bean properties from init parameters.
-        // 解析 <init-param /> 标签，封装到 PropertyValues pvs 中
 		PropertyValues pvs = new ServletConfigPropertyValues(getServletConfig(), this.requiredProperties);
 		if (!pvs.isEmpty()) {
 			try {
-			    // 将当前的这个 Servlet 对象，转化成一个 BeanWrapper 对象。从而能够以 Spring 的方式来将 pvs 注入到该 BeanWrapper 对象中
 				BeanWrapper bw = PropertyAccessorFactory.forBeanPropertyAccess(this);
 				ResourceLoader resourceLoader = new ServletContextResourceLoader(getServletContext());
-				// 注册自定义属性编辑器，一旦碰到 Resource 类型的属性，将会使用 ResourceEditor 进行解析
 				bw.registerCustomEditor(Resource.class, new ResourceEditor(resourceLoader, getEnvironment()));
-                // 空实现，留给子类覆盖
 				initBeanWrapper(bw);
-				// 以 Spring 的方式来将 pvs 注入到该 BeanWrapper 对象中
 				bw.setPropertyValues(pvs, true);
-			} catch (BeansException ex) {
+			}
+			catch (BeansException ex) {
 				if (logger.isErrorEnabled()) {
 					logger.error("Failed to set bean properties on servlet '" + getServletName() + "'", ex);
 				}
@@ -168,7 +167,6 @@ public abstract class HttpServletBean extends HttpServlet implements Environment
 		}
 
 		// Let subclasses do whatever initialization they like.
-        // 子类来实现，实现自定义的初始化逻辑。目前，有具体的代码实现。
 		initServletBean();
 	}
 
@@ -206,8 +204,6 @@ public abstract class HttpServletBean extends HttpServlet implements Environment
 
 
 	/**
-     * ServletConfig 的 PropertyValues 封装实现类
-     *
 	 * PropertyValues implementation created from ServletConfig init parameters.
 	 */
 	private static class ServletConfigPropertyValues extends MutablePropertyValues {
@@ -221,25 +217,21 @@ public abstract class HttpServletBean extends HttpServlet implements Environment
 		 */
 		public ServletConfigPropertyValues(ServletConfig config, Set<String> requiredProperties)
 				throws ServletException {
-		    // 获得缺失的属性的集合
+
 			Set<String> missingProps = (!CollectionUtils.isEmpty(requiredProperties) ?
 					new HashSet<>(requiredProperties) : null);
 
-			// 遍历 ServletConfig 的初始化参数集合，添加到 ServletConfigPropertyValues 中，并从 missingProps 移除
 			Enumeration<String> paramNames = config.getInitParameterNames();
 			while (paramNames.hasMoreElements()) {
 				String property = paramNames.nextElement();
 				Object value = config.getInitParameter(property);
-				// 添加到 ServletConfigPropertyValues 中
 				addPropertyValue(new PropertyValue(property, value));
-				// 从 missingProps 中移除
 				if (missingProps != null) {
 					missingProps.remove(property);
 				}
 			}
 
 			// Fail if we are still missing properties.
-            // 如果存在缺失的属性，抛出 ServletException 异常
 			if (!CollectionUtils.isEmpty(missingProps)) {
 				throw new ServletException(
 						"Initialization from ServletConfig for servlet '" + config.getServletName() +
@@ -247,7 +239,6 @@ public abstract class HttpServletBean extends HttpServlet implements Environment
 						StringUtils.collectionToDelimitedString(missingProps, ", "));
 			}
 		}
-
 	}
 
 }

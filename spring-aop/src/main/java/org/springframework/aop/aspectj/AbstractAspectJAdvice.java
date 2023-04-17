@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,12 +16,22 @@
 
 package org.springframework.aop.aspectj;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.aopalliance.aop.Advice;
 import org.aopalliance.intercept.MethodInvocation;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.weaver.tools.JoinPointMatch;
 import org.aspectj.weaver.tools.PointcutParameter;
+
 import org.springframework.aop.AopInvocationException;
 import org.springframework.aop.MethodMatcher;
 import org.springframework.aop.Pointcut;
@@ -33,16 +43,11 @@ import org.springframework.aop.support.StaticMethodMatcher;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.ParameterNameDiscoverer;
 import org.springframework.lang.Nullable;
-import org.springframework.util.*;
-
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Type;
-import java.util.HashMap;
-import java.util.Map;
+import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.ReflectionUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * Base class for AOP Alliance {@link org.aopalliance.aop.Advice} classes
@@ -58,7 +63,7 @@ import java.util.Map;
 public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedenceInformation, Serializable {
 
 	/**
-	 * Key used in ReflectiveMethodInvocation userAtributes map for the current joinpoint.
+	 * Key used in ReflectiveMethodInvocation userAttributes map for the current joinpoint.
 	 */
 	protected static final String JOIN_POINT_KEY = JoinPoint.class.getName();
 
@@ -143,9 +148,7 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 
 	@Nullable
 	private Map<String, Integer> argumentBindings;
-    /**
-     *
-     */
+
 	private boolean argumentsIntrospected = false;
 
 	@Nullable
@@ -347,17 +350,8 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 		return this.discoveredThrowingType;
 	}
 
-	private boolean isVariableName(String name) {
-		char[] chars = name.toCharArray();
-		if (!Character.isJavaIdentifierStart(chars[0])) {
-			return false;
-		}
-		for (int i = 1; i < chars.length; i++) {
-			if (!Character.isJavaIdentifierPart(chars[i])) {
-				return false;
-			}
-		}
-		return true;
+	private static boolean isVariableName(String name) {
+		return AspectJProxyUtils.isVariableName(name);
 	}
 
 
@@ -374,7 +368,7 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 	 * to which argument name. There are multiple strategies for determining
 	 * this binding, which are arranged in a ChainOfResponsibility.
 	 */
-	public final synchronized void calculateArgumentBindings() {
+	public final void calculateArgumentBindings() {
 		// The simple case... nothing to bind.
 		if (this.argumentsIntrospected || this.parameterTypes.length == 0) {
 			return;
@@ -630,23 +624,21 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 		return invokeAdviceMethodWithGivenArgs(argBinding(jp, jpMatch, returnValue, t));
 	}
 
-	// 【重要 AOP】执行增强 Advice 的方法
 	protected Object invokeAdviceMethodWithGivenArgs(Object[] args) throws Throwable {
 		Object[] actualArgs = args;
 		if (this.aspectJAdviceMethod.getParameterCount() == 0) {
 			actualArgs = null;
 		}
 		try {
-		    // 设置可访问
 			ReflectionUtils.makeAccessible(this.aspectJAdviceMethod);
-			// TODO AopUtils.invokeJoinpointUsingReflection
-            // 调用增强的方法
 			return this.aspectJAdviceMethod.invoke(this.aspectInstanceFactory.getAspectInstance(), actualArgs);
-		} catch (IllegalArgumentException ex) {
+		}
+		catch (IllegalArgumentException ex) {
 			throw new AopInvocationException("Mismatch on arguments to advice method [" +
 					this.aspectJAdviceMethod + "]; pointcut expression [" +
 					this.pointcut.getPointcutExpression() + "]", ex);
-		} catch (InvocationTargetException ex) {
+		}
+		catch (InvocationTargetException ex) {
 			throw ex.getTargetException();
 		}
 	}
@@ -718,7 +710,7 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 		}
 
 		@Override
-		public boolean equals(Object other) {
+		public boolean equals(@Nullable Object other) {
 			if (this == other) {
 				return true;
 			}
@@ -732,6 +724,11 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 		@Override
 		public int hashCode() {
 			return this.adviceMethod.hashCode();
+		}
+
+		@Override
+		public String toString() {
+			return getClass().getName() + ": " + this.adviceMethod;
 		}
 	}
 

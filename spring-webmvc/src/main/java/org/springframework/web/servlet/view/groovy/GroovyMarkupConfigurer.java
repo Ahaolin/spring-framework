@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -80,7 +80,7 @@ import org.springframework.util.StringUtils;
  * @author Rossen Stoyanchev
  * @since 4.1
  * @see GroovyMarkupView
- * @see <a href="http://groovy-lang.org/templating.html#_the_markuptemplateengine">
+ * @see <a href="https://groovy-lang.org/templating.html#_the_markuptemplateengine">
  *     Groovy Markup Template engine documentation</a>
  */
 public class GroovyMarkupConfigurer extends TemplateConfiguration
@@ -121,6 +121,7 @@ public class GroovyMarkupConfigurer extends TemplateConfiguration
 		this.templateEngine = templateEngine;
 	}
 
+	@Override
 	public MarkupTemplateEngine getTemplateEngine() {
 		Assert.state(this.templateEngine != null, "No MarkupTemplateEngine set");
 		return this.templateEngine;

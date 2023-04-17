@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,7 @@
 package org.springframework.oxm;
 
 import java.io.IOException;
+
 import javax.xml.transform.Result;
 
 /**
@@ -25,7 +26,7 @@ import javax.xml.transform.Result;
  *
  * <p>Although the {@code marshal} method accepts a {@code java.lang.Object} as its
  * first parameter, most {@code Marshaller} implementations cannot handle arbitrary
- * {@code Object}s. Instead, a object class must be registered with the marshaller,
+ * {@code Object}s. Instead, an object class must be registered with the marshaller,
  * or have a common base class.
  *
  * @author Arjen Poutsma

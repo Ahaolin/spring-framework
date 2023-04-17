@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -48,6 +48,7 @@ import org.springframework.lang.Nullable;
  * @author Andy Clement
  * @author Juergen Hoeller
  * @author Chris Beams
+ * @author Sam Brannen
  * @since 3.0
  * @see StandardEvaluationContext#addMethodResolver(MethodResolver)
  */
@@ -160,23 +161,23 @@ public class ReflectiveMethodResolver implements MethodResolver {
 
 			for (Method method : methodsToIterate) {
 				if (method.getName().equals(name)) {
-					Class<?>[] paramTypes = method.getParameterTypes();
-					List<TypeDescriptor> paramDescriptors = new ArrayList<>(paramTypes.length);
-					for (int i = 0; i < paramTypes.length; i++) {
+					int paramCount = method.getParameterCount();
+					List<TypeDescriptor> paramDescriptors = new ArrayList<>(paramCount);
+					for (int i = 0; i < paramCount; i++) {
 						paramDescriptors.add(new TypeDescriptor(new MethodParameter(method, i)));
 					}
 					ReflectionHelper.ArgumentsMatchInfo matchInfo = null;
-					if (method.isVarArgs() && argumentTypes.size() >= (paramTypes.length - 1)) {
+					if (method.isVarArgs() && argumentTypes.size() >= (paramCount - 1)) {
 						// *sigh* complicated
 						matchInfo = ReflectionHelper.compareArgumentsVarargs(paramDescriptors, argumentTypes, typeConverter);
 					}
-					else if (paramTypes.length == argumentTypes.size()) {
+					else if (paramCount == argumentTypes.size()) {
 						// Name and parameter number match, check the arguments
 						matchInfo = ReflectionHelper.compareArguments(paramDescriptors, argumentTypes, typeConverter);
 					}
 					if (matchInfo != null) {
 						if (matchInfo.isExactMatch()) {
-							return new ReflectiveMethodExecutor(method);
+							return new ReflectiveMethodExecutor(method, type);
 						}
 						else if (matchInfo.isCloseMatch()) {
 							if (this.useDistance) {
@@ -204,13 +205,13 @@ public class ReflectiveMethodResolver implements MethodResolver {
 				}
 			}
 			if (closeMatch != null) {
-				return new ReflectiveMethodExecutor(closeMatch);
+				return new ReflectiveMethodExecutor(closeMatch, type);
 			}
 			else if (matchRequiringConversion != null) {
 				if (multipleOptions) {
 					throw new SpelEvaluationException(SpelMessage.MULTIPLE_POSSIBLE_METHODS, name);
 				}
-				return new ReflectiveMethodExecutor(matchRequiringConversion);
+				return new ReflectiveMethodExecutor(matchRequiringConversion, type);
 			}
 			else {
 				return null;
@@ -225,8 +226,7 @@ public class ReflectiveMethodResolver implements MethodResolver {
 		if (targetObject instanceof Class) {
 			Set<Method> result = new LinkedHashSet<>();
 			// Add these so that static methods are invocable on the type: e.g. Float.valueOf(..)
-			Method[] methods = getMethods(type);
-			for (Method method : methods) {
+			for (Method method : getMethods(type)) {
 				if (Modifier.isStatic(method.getModifiers())) {
 					result.add(method);
 				}
@@ -239,19 +239,23 @@ public class ReflectiveMethodResolver implements MethodResolver {
 			Set<Method> result = new LinkedHashSet<>();
 			// Expose interface methods (not proxy-declared overrides) for proper vararg introspection
 			for (Class<?> ifc : type.getInterfaces()) {
-				Method[] methods = getMethods(ifc);
-				for (Method method : methods) {
+				for (Method method : getMethods(ifc)) {
 					if (isCandidateForInvocation(method, type)) {
 						result.add(method);
 					}
+				}
+			}
+			// Ensure methods defined in java.lang.Object are exposed for JDK proxies.
+			for (Method method : getMethods(Object.class)) {
+				if (isCandidateForInvocation(method, type)) {
+					result.add(method);
 				}
 			}
 			return result;
 		}
 		else {
 			Set<Method> result = new LinkedHashSet<>();
-			Method[] methods = getMethods(type);
-			for (Method method : methods) {
+			for (Method method : getMethods(type)) {
 				if (isCandidateForInvocation(method, type)) {
 					result.add(method);
 				}
@@ -276,7 +280,7 @@ public class ReflectiveMethodResolver implements MethodResolver {
 	 * Determine whether the given {@code Method} is a candidate for method resolution
 	 * on an instance of the given target class.
 	 * <p>The default implementation considers any method as a candidate, even for
-	 * static methods sand non-user-declared methods on the {@link Object} base class.
+	 * static methods and non-user-declared methods on the {@link Object} base class.
 	 * @param method the Method to evaluate
 	 * @param targetClass the concrete target class that is being introspected
 	 * @since 4.3.15

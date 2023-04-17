@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,17 +18,20 @@ package org.springframework.web.server.adapter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import reactor.blockhound.BlockHound;
+import reactor.blockhound.integration.BlockHoundIntegration;
+
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.http.server.reactive.HttpHandler;
+import org.springframework.http.server.reactive.HttpHandlerDecoratorFactory;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
@@ -78,7 +81,6 @@ public final class WebHttpHandlerBuilder {
 	/** Well-known name for the ForwardedHeaderTransformer in the bean factory. */
 	public static final String FORWARDED_HEADER_TRANSFORMER_BEAN_NAME = "forwardedHeaderTransformer";
 
-
 	private final WebHandler webHandler;
 
 	@Nullable
@@ -87,6 +89,9 @@ public final class WebHttpHandlerBuilder {
 	private final List<WebFilter> filters = new ArrayList<>();
 
 	private final List<WebExceptionHandler> exceptionHandlers = new ArrayList<>();
+
+	@Nullable
+	private Function<HttpHandler, HttpHandler> httpHandlerDecorator;
 
 	@Nullable
 	private WebSessionManager sessionManager;
@@ -122,6 +127,7 @@ public final class WebHttpHandlerBuilder {
 		this.codecConfigurer = other.codecConfigurer;
 		this.localeContextResolver = other.localeContextResolver;
 		this.forwardedHeaderTransformer = other.forwardedHeaderTransformer;
+		this.httpHandlerDecorator = other.httpHandlerDecorator;
 	}
 
 
@@ -144,6 +150,8 @@ public final class WebHttpHandlerBuilder {
 	 * see {@link AnnotationAwareOrderComparator}.
 	 * <li>{@link WebExceptionHandler} [0..N] -- detected by type and
 	 * ordered.
+	 * <li>{@link HttpHandlerDecoratorFactory} [0..N] -- detected by type and
+	 * ordered.
 	 * <li>{@link WebSessionManager} [0..1] -- looked up by the name
 	 * {@link #WEB_SESSION_MANAGER_BEAN_NAME}.
 	 * <li>{@link ServerCodecConfigurer} [0..1] -- looked up by the name
@@ -155,15 +163,25 @@ public final class WebHttpHandlerBuilder {
 	 * @return the prepared builder
 	 */
 	public static WebHttpHandlerBuilder applicationContext(ApplicationContext context) {
+
 		WebHttpHandlerBuilder builder = new WebHttpHandlerBuilder(
 				context.getBean(WEB_HANDLER_BEAN_NAME, WebHandler.class), context);
 
-		// Autowire lists for @Bean + @Order
+		List<WebFilter> webFilters = context
+				.getBeanProvider(WebFilter.class)
+				.orderedStream()
+				.collect(Collectors.toList());
+		builder.filters(filters -> filters.addAll(webFilters));
 
-		SortedBeanContainer container = new SortedBeanContainer();
-		context.getAutowireCapableBeanFactory().autowireBean(container);
-		builder.filters(filters -> filters.addAll(container.getFilters()));
-		builder.exceptionHandlers(handlers -> handlers.addAll(container.getExceptionHandlers()));
+		List<WebExceptionHandler> exceptionHandlers = context
+				.getBeanProvider(WebExceptionHandler.class)
+				.orderedStream()
+				.collect(Collectors.toList());
+		builder.exceptionHandlers(handlers -> handlers.addAll(exceptionHandlers));
+
+		context.getBeanProvider(HttpHandlerDecoratorFactory.class)
+				.orderedStream()
+				.forEach(builder::httpHandlerDecorator);
 
 		try {
 			builder.sessionManager(
@@ -176,14 +194,6 @@ public final class WebHttpHandlerBuilder {
 		try {
 			builder.codecConfigurer(
 					context.getBean(SERVER_CODEC_CONFIGURER_BEAN_NAME, ServerCodecConfigurer.class));
-		}
-		catch (NoSuchBeanDefinitionException ex) {
-			// Fall back on default
-		}
-
-		try {
-			builder.localeContextResolver(
-					context.getBean(LOCALE_CONTEXT_RESOLVER_BEAN_NAME, LocaleContextResolver.class));
 		}
 		catch (NoSuchBeanDefinitionException ex) {
 			// Fall back on default
@@ -232,7 +242,6 @@ public final class WebHttpHandlerBuilder {
 	}
 
 	private void updateFilters() {
-
 		if (this.filters.isEmpty()) {
 			return;
 		}
@@ -350,12 +359,35 @@ public final class WebHttpHandlerBuilder {
 		return (this.forwardedHeaderTransformer != null);
 	}
 
+	/**
+	 * Configure a {@link Function} to decorate the {@link HttpHandler} returned
+	 * by this builder which effectively wraps the entire
+	 * {@link WebExceptionHandler} - {@link WebFilter} - {@link WebHandler}
+	 * processing chain. This provides access to the request and response before
+	 * the entire chain and likewise the ability to observe the result of
+	 * the entire chain.
+	 * @param handlerDecorator the decorator to apply
+	 * @since 5.3
+	 */
+	public WebHttpHandlerBuilder httpHandlerDecorator(Function<HttpHandler, HttpHandler> handlerDecorator) {
+		this.httpHandlerDecorator = (this.httpHandlerDecorator != null ?
+				handlerDecorator.andThen(this.httpHandlerDecorator) : handlerDecorator);
+		return this;
+	}
+
+	/**
+	 * Whether a decorator for {@link HttpHandler} is configured or not via
+	 * {@link #httpHandlerDecorator(Function)}.
+	 * @since 5.3
+	 */
+	public boolean hasHttpHandlerDecorator() {
+		return (this.httpHandlerDecorator != null);
+	}
 
 	/**
 	 * Build the {@link HttpHandler}.
 	 */
 	public HttpHandler build() {
-
 		WebHandler decorated = new FilteringWebHandler(this.webHandler, this.filters);
 		decorated = new ExceptionHandlingWebHandler(decorated,  this.exceptionHandlers);
 
@@ -377,7 +409,7 @@ public final class WebHttpHandlerBuilder {
 		}
 		adapted.afterPropertiesSet();
 
-		return adapted;
+		return (this.httpHandlerDecorator != null ? this.httpHandlerDecorator.apply(adapted) : adapted);
 	}
 
 	/**
@@ -390,28 +422,19 @@ public final class WebHttpHandlerBuilder {
 	}
 
 
-	private static class SortedBeanContainer {
+	/**
+	 * {@code BlockHoundIntegration} for spring-web classes.
+	 * @since 5.3.6
+	 */
+	public static class SpringWebBlockHoundIntegration implements BlockHoundIntegration {
 
-		private List<WebFilter> filters = Collections.emptyList();
+		@Override
+		public void applyTo(BlockHound.Builder builder) {
 
-		private List<WebExceptionHandler> exceptionHandlers = Collections.emptyList();
+			// Avoid hard references potentially anywhere in spring-web (no need for structural dependency)
 
-		@Autowired(required = false)
-		public void setFilters(List<WebFilter> filters) {
-			this.filters = filters;
-		}
-
-		public List<WebFilter> getFilters() {
-			return this.filters;
-		}
-
-		@Autowired(required = false)
-		public void setExceptionHandlers(List<WebExceptionHandler> exceptionHandlers) {
-			this.exceptionHandlers = exceptionHandlers;
-		}
-
-		public List<WebExceptionHandler> getExceptionHandlers() {
-			return this.exceptionHandlers;
+			builder.allowBlockingCallsInside("org.springframework.http.MediaTypeFactory", "<clinit>");
+			builder.allowBlockingCallsInside("org.springframework.web.util.HtmlUtils", "<clinit>");
 		}
 	}
 

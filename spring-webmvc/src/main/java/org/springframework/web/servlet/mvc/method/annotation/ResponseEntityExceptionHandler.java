@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,7 @@ package org.springframework.web.servlet.mvc.method.annotation;
 
 import java.util.List;
 import java.util.Set;
+
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.logging.Log;
@@ -230,6 +231,12 @@ public abstract class ResponseEntityExceptionHandler {
 		List<MediaType> mediaTypes = ex.getSupportedMediaTypes();
 		if (!CollectionUtils.isEmpty(mediaTypes)) {
 			headers.setAccept(mediaTypes);
+			if (request instanceof ServletWebRequest) {
+				ServletWebRequest servletWebRequest = (ServletWebRequest) request;
+				if (HttpMethod.PATCH.equals(servletWebRequest.getHttpMethod())) {
+					headers.setAcceptPatch(mediaTypes);
+				}
+			}
 		}
 
 		return handleExceptionInternal(ex, null, headers, status, request);
@@ -418,7 +425,7 @@ public abstract class ResponseEntityExceptionHandler {
 	}
 
 	/**
-	 * Customize the response for NoHandlerFoundException.
+	 * Customize the response for AsyncRequestTimeoutException.
 	 * <p>This method delegates to {@link #handleExceptionInternal}.
 	 * @param ex the exception
 	 * @param headers the headers to be written to the response
@@ -446,7 +453,7 @@ public abstract class ResponseEntityExceptionHandler {
 	}
 
 	/**
-	 * A single place to customize the response body of all Exception types.
+	 * A single place to customize the response body of all exception types.
 	 * <p>The default implementation sets the {@link WebUtils#ERROR_EXCEPTION_ATTRIBUTE}
 	 * request attribute and creates a {@link ResponseEntity} from the given
 	 * body, headers, and status.

@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -48,14 +48,12 @@ import org.springframework.util.ClassUtils;
  */
 public class InternalResourceViewResolver extends UrlBasedViewResolver {
 
-    /**
-     * 判断 javax.servlet.jsp.jstl.core.Config 是否存在
-     */
 	private static final boolean jstlPresent = ClassUtils.isPresent(
 			"javax.servlet.jsp.jstl.core.Config", InternalResourceViewResolver.class.getClassLoader());
 
 	@Nullable
 	private Boolean alwaysInclude;
+
 
 	/**
 	 * Sets the default {@link #setViewClass view class} to {@link #requiredViewClass}:
@@ -63,12 +61,10 @@ public class InternalResourceViewResolver extends UrlBasedViewResolver {
 	 * is present.
 	 */
 	public InternalResourceViewResolver() {
-	    // 获得 viewClass
 		Class<?> viewClass = requiredViewClass();
 		if (InternalResourceView.class == viewClass && jstlPresent) {
 			viewClass = JstlView.class;
 		}
-		// 设置 viewClass
 		setViewClass(viewClass);
 	}
 
@@ -85,13 +81,6 @@ public class InternalResourceViewResolver extends UrlBasedViewResolver {
 		setSuffix(suffix);
 	}
 
-	/**
-	 * This resolver requires {@link InternalResourceView}.
-	 */
-	@Override
-	protected Class<?> requiredViewClass() {
-		return InternalResourceView.class;
-	}
 
 	/**
 	 * Specify whether to always include the view rather than forward to it.
@@ -103,12 +92,21 @@ public class InternalResourceViewResolver extends UrlBasedViewResolver {
 		this.alwaysInclude = alwaysInclude;
 	}
 
+
+	@Override
+	protected Class<?> requiredViewClass() {
+		return InternalResourceView.class;
+	}
+
+	@Override
+	protected AbstractUrlBasedView instantiateView() {
+		return (getViewClass() == InternalResourceView.class ? new InternalResourceView() :
+				(getViewClass() == JstlView.class ? new JstlView() : super.instantiateView()));
+	}
+
 	@Override
 	protected AbstractUrlBasedView buildView(String viewName) throws Exception {
-	    // 调用父方法
 		InternalResourceView view = (InternalResourceView) super.buildView(viewName);
-
-		// 设置 View 对象的相关属性
 		if (this.alwaysInclude != null) {
 			view.setAlwaysInclude(this.alwaysInclude);
 		}

@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,9 +16,10 @@
 
 package org.springframework.web.servlet;
 
-import org.springframework.lang.Nullable;
-
+import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.lang.Nullable;
 
 /**
  * Interface to be implemented by objects that define a mapping between
@@ -44,7 +45,7 @@ import javax.servlet.http.HttpServletRequest;
  *
  * <p>Note: Implementations can implement the {@link org.springframework.core.Ordered}
  * interface to be able to specify a sorting order and thus a priority for getting
- * applied by DispatcherServlet. Non-Ordered instances get treated as lowest priority.
+ * applied by DispatcherServlet. Non-Ordered instances get treated as the lowest priority.
  *
  * @author Rod Johnson
  * @author Juergen Hoeller
@@ -54,6 +55,28 @@ import javax.servlet.http.HttpServletRequest;
  * @see org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping
  */
 public interface HandlerMapping {
+
+	/**
+	 * Name of the {@link HttpServletRequest} attribute that contains the mapped
+	 * handler for the best matching pattern.
+	 * @since 4.3.21
+	 */
+	String BEST_MATCHING_HANDLER_ATTRIBUTE = HandlerMapping.class.getName() + ".bestMatchingHandler";
+
+	/**
+	 * Name of the {@link HttpServletRequest} attribute that contains the path
+	 * used to look up the matching handler, which depending on the configured
+	 * {@link org.springframework.web.util.UrlPathHelper} could be the full path
+	 * or without the context path, decoded or not, etc.
+	 * @since 5.2
+	 * @deprecated as of 5.3 in favor of
+	 * {@link org.springframework.web.util.UrlPathHelper#PATH_ATTRIBUTE} and
+	 * {@link org.springframework.web.util.ServletRequestPathUtils#PATH_ATTRIBUTE}.
+	 * To access the cached path used for request mapping, use
+	 * {@link org.springframework.web.util.ServletRequestPathUtils#getCachedPathValue(ServletRequest)}.
+	 */
+	@Deprecated
+	String LOOKUP_PATH = HandlerMapping.class.getName() + ".lookupPath";
 
 	/**
 	 * Name of the {@link HttpServletRequest} attribute that contains the path
@@ -113,9 +136,23 @@ public interface HandlerMapping {
 	 */
 	String PRODUCIBLE_MEDIA_TYPES_ATTRIBUTE = HandlerMapping.class.getName() + ".producibleMediaTypes";
 
+
 	/**
-     * 获得请求对应的处理器和拦截器们
-     *
+	 * Whether this {@code HandlerMapping} instance has been enabled to use parsed
+	 * {@link org.springframework.web.util.pattern.PathPattern}s in which case
+	 * the {@link DispatcherServlet} automatically
+	 * {@link org.springframework.web.util.ServletRequestPathUtils#parseAndCache parses}
+	 * the {@code RequestPath} to make it available for
+	 * {@link org.springframework.web.util.ServletRequestPathUtils#getParsedRequestPath
+	 * access} in {@code HandlerMapping}s, {@code HandlerInterceptor}s, and
+	 * other components.
+	 * @since 5.3
+	 */
+	default boolean usesPathPatterns() {
+		return false;
+	}
+
+	/**
 	 * Return a handler and any interceptors for this request. The choice may be made
 	 * on request URL, session state, or any factor the implementing class chooses.
 	 * <p>The returned HandlerExecutionChain contains a handler Object, rather than

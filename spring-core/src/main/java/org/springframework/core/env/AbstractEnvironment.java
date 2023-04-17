@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -48,6 +48,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Chris Beams
  * @author Juergen Hoeller
+ * @author Phillip Webb
  * @since 3.1
  * @see ConfigurableEnvironment
  * @see StandardEnvironment
@@ -107,10 +108,9 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment {
 
 	private final Set<String> defaultProfiles = new LinkedHashSet<>(getReservedDefaultProfiles());
 
-	private final MutablePropertySources propertySources = new MutablePropertySources();
+	private final MutablePropertySources propertySources;
 
-	private final ConfigurablePropertyResolver propertyResolver =
-			new PropertySourcesPropertyResolver(this.propertySources);
+	private final ConfigurablePropertyResolver propertyResolver;
 
 
 	/**
@@ -121,9 +121,45 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment {
 	 * @see #customizePropertySources(MutablePropertySources)
 	 */
 	public AbstractEnvironment() {
-		customizePropertySources(this.propertySources);
+		this(new MutablePropertySources());
 	}
 
+	/**
+	 * Create a new {@code Environment} instance with a specific
+	 * {@link MutablePropertySources} instance, calling back to
+	 * {@link #customizePropertySources(MutablePropertySources)} during
+	 * construction to allow subclasses to contribute or manipulate
+	 * {@link PropertySource} instances as appropriate.
+	 * @param propertySources property sources to use
+	 * @since 5.3.4
+	 * @see #customizePropertySources(MutablePropertySources)
+	 */
+	protected AbstractEnvironment(MutablePropertySources propertySources) {
+		this.propertySources = propertySources;
+		this.propertyResolver = createPropertyResolver(propertySources);
+		customizePropertySources(propertySources);
+	}
+
+
+	/**
+	 * Factory method used to create the {@link ConfigurablePropertyResolver}
+	 * instance used by the Environment.
+	 * @since 5.3.4
+	 * @see #getPropertyResolver()
+	 */
+	protected ConfigurablePropertyResolver createPropertyResolver(MutablePropertySources propertySources) {
+		return new PropertySourcesPropertyResolver(propertySources);
+	}
+
+	/**
+	 * Return the {@link ConfigurablePropertyResolver} being used by the
+	 * {@link Environment}.
+	 * @since 5.3.4
+	 * @see #createPropertyResolver(MutablePropertySources)
+	 */
+	protected final ConfigurablePropertyResolver getPropertyResolver() {
+		return this.propertyResolver;
+	}
 
 	/**
 	 * Customize the set of {@link PropertySource} objects to be searched by this
@@ -134,6 +170,7 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment {
 	 * sources using {@link MutablePropertySources#addLast(PropertySource)} such that
 	 * further subclasses may call {@code super.customizePropertySources()} with
 	 * predictable results. For example:
+	 *
 	 * <pre class="code">
 	 * public class Level1Environment extends AbstractEnvironment {
 	 *     &#064;Override
@@ -153,11 +190,13 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment {
 	 *     }
 	 * }
 	 * </pre>
-	 * In this arrangement, properties will be resolved against sources A, B, C, D in that
+	 *
+	 * <p>In this arrangement, properties will be resolved against sources A, B, C, D in that
 	 * order. That is to say that property source "A" has precedence over property source
 	 * "D". If the {@code Level2Environment} subclass wished to give property sources C
 	 * and D higher precedence than A and B, it could simply call
 	 * {@code super.customizePropertySources} after, rather than before adding its own:
+	 *
 	 * <pre class="code">
 	 * public class Level2Environment extends Level1Environment {
 	 *     &#064;Override
@@ -168,9 +207,10 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment {
 	 *     }
 	 * }
 	 * </pre>
-	 * The search order is now C, D, A, B as desired.
 	 *
-	 * <p>Beyond these recommendations, subclasses may use any of the {@code add&#42;},
+	 * <p>The search order is now C, D, A, B as desired.
+	 *
+	 * <p>Beyond these recommendations, subclasses may use any of the {@code add*},
 	 * {@code remove}, or {@code replace} methods exposed by {@link MutablePropertySources}
 	 * in order to create the exact arrangement of property sources desired.
 	 *
@@ -180,13 +220,14 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment {
 	 * property sources via the {@link #getPropertySources()} accessor, typically within
 	 * an {@link org.springframework.context.ApplicationContextInitializer
 	 * ApplicationContextInitializer}. For example:
+	 *
 	 * <pre class="code">
 	 * ConfigurableEnvironment env = new StandardEnvironment();
 	 * env.getPropertySources().addLast(new PropertySourceX(...));
 	 * </pre>
 	 *
 	 * <h2>A warning about instance variable access</h2>
-	 * Instance variables declared in subclasses and having default initial values should
+	 * <p>Instance variables declared in subclasses and having default initial values should
 	 * <em>not</em> be accessed from within this method. Due to Java object creation
 	 * lifecycle constraints, any initial value will not yet be assigned when this
 	 * callback is invoked by the {@link #AbstractEnvironment()} constructor, which may
@@ -195,7 +236,6 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment {
 	 * property source manipulation and instance variable access directly within the
 	 * subclass constructor. Note that <em>assigning</em> values to instance variables is
 	 * not problematic; it is only attempting to read default values that must be avoided.
-	 *
 	 * @see MutablePropertySources
 	 * @see PropertySourcesPropertyResolver
 	 * @see org.springframework.context.ApplicationContextInitializer
@@ -227,19 +267,16 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment {
 	/**
 	 * Return the set of active profiles as explicitly set through
 	 * {@link #setActiveProfiles} or if the current set of active profiles
-	 * is empty, check for the presence of the {@value #ACTIVE_PROFILES_PROPERTY_NAME}
-	 * property and assign its value to the set of active profiles.
+	 * is empty, check for the presence of {@link #doGetActiveProfilesProperty()}
+	 * and assign its value to the set of active profiles.
 	 * @see #getActiveProfiles()
-	 * @see #ACTIVE_PROFILES_PROPERTY_NAME
+	 * @see #doGetActiveProfilesProperty()
 	 */
 	protected Set<String> doGetActiveProfiles() {
 		synchronized (this.activeProfiles) {
-		    // 如果 activeProfiles 为空，则进行初始化
 			if (this.activeProfiles.isEmpty()) {
-			    // 获得 ACTIVE_PROFILES_PROPERTY_NAME 对应的 profiles 属性值
-				String profiles = getProperty(ACTIVE_PROFILES_PROPERTY_NAME);
+				String profiles = doGetActiveProfilesProperty();
 				if (StringUtils.hasText(profiles)) {
-				    // 设置到 activeProfiles 中
 					setActiveProfiles(StringUtils.commaDelimitedListToStringArray(
 							StringUtils.trimAllWhitespace(profiles)));
 				}
@@ -248,18 +285,25 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment {
 		}
 	}
 
+	/**
+	 * Return the property value for the active profiles.
+	 * @since 5.3.4
+	 * @see #ACTIVE_PROFILES_PROPERTY_NAME
+	 */
+	@Nullable
+	protected String doGetActiveProfilesProperty() {
+		return getProperty(ACTIVE_PROFILES_PROPERTY_NAME);
+	}
+
 	@Override
 	public void setActiveProfiles(String... profiles) {
 		Assert.notNull(profiles, "Profile array must not be null");
 		if (logger.isDebugEnabled()) {
-			logger.debug("Activating profiles " + Arrays.asList(profiles));
+			logger.debug("Activating profiles " + Arrays.toString(profiles));
 		}
 		synchronized (this.activeProfiles) {
-		    // 清空 activeProfiles
 			this.activeProfiles.clear();
-			// 遍历 profiles 数组，添加到 activeProfiles 中
 			for (String profile : profiles) {
-			    // 校验
 				validateProfile(profile);
 				this.activeProfiles.add(profile);
 			}
@@ -288,18 +332,17 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment {
 	 * Return the set of default profiles explicitly set via
 	 * {@link #setDefaultProfiles(String...)} or if the current set of default profiles
 	 * consists only of {@linkplain #getReservedDefaultProfiles() reserved default
-	 * profiles}, then check for the presence of the
-	 * {@value #DEFAULT_PROFILES_PROPERTY_NAME} property and assign its value (if any)
-	 * to the set of default profiles.
+	 * profiles}, then check for the presence of {@link #doGetActiveProfilesProperty()}
+	 * and assign its value (if any) to the set of default profiles.
 	 * @see #AbstractEnvironment()
 	 * @see #getDefaultProfiles()
-	 * @see #DEFAULT_PROFILES_PROPERTY_NAME
 	 * @see #getReservedDefaultProfiles()
+	 * @see #doGetDefaultProfilesProperty()
 	 */
 	protected Set<String> doGetDefaultProfiles() {
 		synchronized (this.defaultProfiles) {
 			if (this.defaultProfiles.equals(getReservedDefaultProfiles())) {
-				String profiles = getProperty(DEFAULT_PROFILES_PROPERTY_NAME);
+				String profiles = doGetDefaultProfilesProperty();
 				if (StringUtils.hasText(profiles)) {
 					setDefaultProfiles(StringUtils.commaDelimitedListToStringArray(
 							StringUtils.trimAllWhitespace(profiles)));
@@ -307,6 +350,16 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment {
 			}
 			return this.defaultProfiles;
 		}
+	}
+
+	/**
+	 * Return the property value for the default profiles.
+	 * @since 5.3.4
+	 * @see #DEFAULT_PROFILES_PROPERTY_NAME
+	 */
+	@Nullable
+	protected String doGetDefaultProfilesProperty() {
+		return getProperty(DEFAULT_PROFILES_PROPERTY_NAME);
 	}
 
 	/**
@@ -389,7 +442,7 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment {
 	}
 
 	@Override
-	@SuppressWarnings({"unchecked", "rawtypes"})
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	public Map<String, Object> getSystemProperties() {
 		try {
 			return (Map) System.getProperties();
@@ -415,7 +468,7 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment {
 	}
 
 	@Override
-	@SuppressWarnings({"unchecked", "rawtypes"})
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	public Map<String, Object> getSystemEnvironment() {
 		if (suppressGetenvAccess()) {
 			return Collections.emptyMap();
@@ -468,18 +521,14 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment {
 		String[] parentActiveProfiles = parent.getActiveProfiles();
 		if (!ObjectUtils.isEmpty(parentActiveProfiles)) {
 			synchronized (this.activeProfiles) {
-				for (String profile : parentActiveProfiles) {
-					this.activeProfiles.add(profile);
-				}
+				Collections.addAll(this.activeProfiles, parentActiveProfiles);
 			}
 		}
 		String[] parentDefaultProfiles = parent.getDefaultProfiles();
 		if (!ObjectUtils.isEmpty(parentDefaultProfiles)) {
 			synchronized (this.defaultProfiles) {
 				this.defaultProfiles.remove(RESERVED_DEFAULT_PROFILE_NAME);
-				for (String profile : parentDefaultProfiles) {
-					this.defaultProfiles.add(profile);
-				}
+				Collections.addAll(this.defaultProfiles, parentDefaultProfiles);
 			}
 		}
 	}

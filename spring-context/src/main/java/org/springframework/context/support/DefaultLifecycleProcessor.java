@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,19 +16,33 @@
 
 package org.springframework.context.support;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.context.*;
+import org.springframework.context.ApplicationContextException;
+import org.springframework.context.Lifecycle;
+import org.springframework.context.LifecycleProcessor;
+import org.springframework.context.Phased;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
-
-import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Default implementation of the {@link LifecycleProcessor} strategy.
@@ -43,9 +57,6 @@ public class DefaultLifecycleProcessor implements LifecycleProcessor, BeanFactor
 
 	private volatile long timeoutPerShutdownPhase = 30000;
 
-    /**
-     * 是否运行中
-     */
 	private volatile boolean running;
 
 	@Nullable
@@ -128,34 +139,20 @@ public class DefaultLifecycleProcessor implements LifecycleProcessor, BeanFactor
 	// Internal helpers
 
 	private void startBeans(boolean autoStartupOnly) {
-	    // 第一步，获得所有 Lifecycle Bean 对象的 Map 。KEY 为 beanName 。
 		Map<String, Lifecycle> lifecycleBeans = getLifecycleBeans();
-		// 第二步，LifecycleGroup 分组的 Map 。KEY 为 phase 阶段
-		Map<Integer, LifecycleGroup> phases = new HashMap<>();
-		// 生成 LifecycleGroup 分组
+		Map<Integer, LifecycleGroup> phases = new TreeMap<>();
+
 		lifecycleBeans.forEach((beanName, bean) -> {
 			if (!autoStartupOnly || (bean instanceof SmartLifecycle && ((SmartLifecycle) bean).isAutoStartup())) {
-			    // 获得阶段
 				int phase = getPhase(bean);
-				// 获得 LifecycleGroup 对象
-				LifecycleGroup group = phases.get(phase);
-				if (group == null) {
-					group = new LifecycleGroup(phase, this.timeoutPerShutdownPhase, lifecycleBeans, autoStartupOnly);
-					phases.put(phase, group);
-				}
-				// 添加到 LifecycleGroup 中
-				group.add(beanName, bean);
+				phases.computeIfAbsent(
+						phase,
+						p -> new LifecycleGroup(phase, this.timeoutPerShutdownPhase, lifecycleBeans, autoStartupOnly)
+				).add(beanName, bean);
 			}
 		});
-		// 第三步，逐个 LifecycleGroup 的启动
 		if (!phases.isEmpty()) {
-		    // 排序 keys ，实际是排序 phase 。
-			List<Integer> keys = new ArrayList<>(phases.keySet());
-			Collections.sort(keys);
-			// 逐个 LifecycleGroup 的启动
-			for (Integer key : keys) {
-				phases.get(key).start();
-			}
+			phases.values().forEach(LifecycleGroup::start);
 		}
 	}
 
@@ -385,7 +382,7 @@ public class DefaultLifecycleProcessor implements LifecycleProcessor, BeanFactor
 				if (latch.getCount() > 0 && !countDownBeanNames.isEmpty() && logger.isInfoEnabled()) {
 					logger.info("Failed to shut down " + countDownBeanNames.size() + " bean" +
 							(countDownBeanNames.size() > 1 ? "s" : "") + " with phase value " +
-							this.phase + " within timeout of " + this.timeout + ": " + countDownBeanNames);
+							this.phase + " within timeout of " + this.timeout + "ms: " + countDownBeanNames);
 				}
 			}
 			catch (InterruptedException ex) {

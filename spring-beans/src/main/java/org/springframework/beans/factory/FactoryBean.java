@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,16 +19,6 @@ package org.springframework.beans.factory;
 import org.springframework.lang.Nullable;
 
 /**
- * From 《Spring 源码深度解析》P83 页
- *
- * 一般情况下，Spring 通过反射机制利用 bean 的 class 属性指定实现类来实例化 bean 。
- * 某些情况下，实例化 bean 过程比较复杂，如果按照传统的方式，则需要在 <bean> 中提供大量的配置信息，
- * 配置方式的灵活性是受限的，这时采用编码的方式可能会得到一个简单的方案。Spring 为此提供了一个 FactoryBean 的工厂类接口，
- * 用户可以通过实现该接口定制实例化 bean 的逻辑。
- *
- * FactoryBean 接口对于 Spring 框架来说战友重要的地址，Spring 自身就提供了 70 多个 FactoryBean 的实现
- * 它们隐藏了实例化一些复杂 bean 的细节，给上层应用带来了便利。
- *
  * Interface to be implemented by objects used within a {@link BeanFactory} which
  * are themselves factories for individual objects. If a bean implements this
  * interface, it is used as a factory for an object to expose, not directly as a
@@ -49,9 +39,15 @@ import org.springframework.lang.Nullable;
  *
  * <p><b>{@code FactoryBean} is a programmatic contract. Implementations are not
  * supposed to rely on annotation-driven injection or other reflective facilities.</b>
- * {@link #getObjectType()} {@link #getObject()} invocations may arrive early in
- * the bootstrap process, even ahead of any post-processor setup. If you need access
+ * {@link #getObjectType()} {@link #getObject()} invocations may arrive early in the
+ * bootstrap process, even ahead of any post-processor setup. If you need access to
  * other beans, implement {@link BeanFactoryAware} and obtain them programmatically.
+ *
+ * <p><b>The container is only responsible for managing the lifecycle of the FactoryBean
+ * instance, not the lifecycle of the objects created by the FactoryBean.</b> Therefore,
+ * a destroy method on an exposed bean object (such as {@link java.io.Closeable#close()})
+ * will <i>not</i> be called automatically. Instead, a FactoryBean should implement
+ * {@link DisposableBean} and delegate any such close call to the underlying object.
  *
  * <p>Finally, FactoryBean objects participate in the containing BeanFactory's
  * synchronization of bean creation. There is usually no need for internal
@@ -67,6 +63,17 @@ import org.springframework.lang.Nullable;
  * @see org.springframework.jndi.JndiObjectFactoryBean
  */
 public interface FactoryBean<T> {
+
+	/**
+	 * The name of an attribute that can be
+	 * {@link org.springframework.core.AttributeAccessor#setAttribute set} on a
+	 * {@link org.springframework.beans.factory.config.BeanDefinition} so that
+	 * factory beans can signal their object type when it can't be deduced from
+	 * the factory bean class.
+	 * @since 5.2
+	 */
+	String OBJECT_TYPE_ATTRIBUTE = "factoryBeanObjectType";
+
 
 	/**
 	 * Return an instance (possibly shared or independent) of the object
@@ -101,7 +108,7 @@ public interface FactoryBean<T> {
 	 * been fully initialized. It must not rely on state created during
 	 * initialization; of course, it can still use such state if available.
 	 * <p><b>NOTE:</b> Autowiring will simply ignore FactoryBeans that return
-	 * {@code null} here. Therefore it is highly recommended to implement
+	 * {@code null} here. Therefore, it is highly recommended to implement
 	 * this method properly, using the current state of the FactoryBean.
 	 * @return the type of object that this FactoryBean creates,
 	 * or {@code null} if not known at the time of the call

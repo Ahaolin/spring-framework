@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,10 +27,11 @@ import java.text.MessageFormat;
  * <p>When a message is formatted, it will have this kind of form, capturing the prefix
  * and the error kind:
  *
- * <pre class="code">EL1004E: Type cannot be found 'String'</pre>
+ * <pre class="code">EL1005E: Type cannot be found 'String'</pre>
  *
  * @author Andy Clement
  * @author Juergen Hoeller
+ * @author Sam Brannen
  * @since 3.0
  */
 public enum SpelMessage {
@@ -255,7 +256,35 @@ public enum SpelMessage {
 
 	/** @since 4.3.17 */
 	FLAWED_PATTERN(Kind.ERROR, 1073,
-			"Failed to efficiently evaluate pattern ''{0}'': consider redesigning it");
+			"Failed to efficiently evaluate pattern ''{0}'': consider redesigning it"),
+
+	/** @since 5.3.17 */
+	EXCEPTION_COMPILING_EXPRESSION(Kind.ERROR, 1074,
+			"An exception occurred while compiling an expression"),
+
+	/** @since 5.3.17 */
+	MAX_ARRAY_ELEMENTS_THRESHOLD_EXCEEDED(Kind.ERROR, 1075,
+			"Array declares too many elements, exceeding the threshold of ''{0}''"),
+
+	/** @since 5.2.23 */
+	MAX_REPEATED_TEXT_SIZE_EXCEEDED(Kind.ERROR, 1076,
+			"Repeated text is too long, exceeding the threshold of ''{0}'' characters"),
+
+	/** @since 5.2.23 */
+	MAX_REGEX_LENGTH_EXCEEDED(Kind.ERROR, 1077,
+			"Regular expression is too long, exceeding the threshold of ''{0}'' characters"),
+
+	/** @since 5.2.24 */
+	MAX_CONCATENATED_STRING_LENGTH_EXCEEDED(Kind.ERROR, 1078,
+			"Concatenated string is too long, exceeding the threshold of ''{0}'' characters"),
+
+	/** @since 5.2.24 */
+	MAX_EXPRESSION_LENGTH_EXCEEDED(Kind.ERROR, 1079,
+			"SpEL expression is too long, exceeding the threshold of ''{0}'' characters"),
+
+	/** @since 5.2.24 */
+	VARIABLE_ASSIGNMENT_NOT_SUPPORTED(Kind.ERROR, 1080,
+			"Assignment to variable ''{0}'' is not supported");
 
 
 	private final Kind kind;
@@ -284,7 +313,7 @@ public enum SpelMessage {
 		formattedMessage.append("EL").append(this.code);
 		switch (this.kind) {
 			case ERROR:
-				formattedMessage.append("E");
+				formattedMessage.append('E');
 				break;
 		}
 		formattedMessage.append(": ");

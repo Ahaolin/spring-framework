@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,7 @@
 package org.springframework.web.servlet.view;
 
 import java.util.Map;
+
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -50,7 +51,7 @@ import org.springframework.web.util.WebUtils;
  * &lt;/bean&gt;</pre>
  *
  * Every view name returned from a handler will be translated to a JSP
- * resource (for example: "myView" -> "/WEB-INF/jsp/myView.jsp"), using
+ * resource (for example: "myView" &rarr; "/WEB-INF/jsp/myView.jsp"), using
  * this view class by default.
  *
  * @author Rod Johnson

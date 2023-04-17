@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,7 @@
 package org.springframework.web.servlet.tags;
 
 import java.io.IOException;
+
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.BodyContent;
 import javax.servlet.jsp.tagext.BodyTag;
@@ -60,7 +61,7 @@ import org.springframework.web.util.JavaScriptUtils;
  * <td>false</td>
  * <td>true</td>
  * <td>Set JavaScript escaping for this tag, as boolean value.
- * Default is false.</td>
+ * Default is {@code false}.</td>
  * </tr>
  * </tbody>
  * </table>

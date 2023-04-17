@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -46,7 +46,7 @@ public abstract class ModelAndViewAssert {
 
 	/**
 	 * Checks whether the model value under the given {@code modelName}
-	 * exists and checks it type, based on the {@code expectedType}. If the
+	 * exists and checks its type, based on the {@code expectedType}. If the
 	 * model entry exists and the type matches, the model value is returned.
 	 * @param mav the ModelAndView to test against (never {@code null})
 	 * @param modelName name of the object to add to the model (never {@code null})
@@ -81,7 +81,7 @@ public abstract class ModelAndViewAssert {
 	}
 
 	/**
-	 * Assert whether or not a model attribute is available.
+	 * Assert whether a model attribute is available.
 	 * @param mav the ModelAndView to test against (never {@code null})
 	 * @param modelName name of the object to add to the model (never {@code null})
 	 */
@@ -142,7 +142,7 @@ public abstract class ModelAndViewAssert {
 	 * @param comparator the comparator to use (may be {@code null}). If not
 	 * specifying the comparator, both lists will be sorted not using any comparator.
 	 */
-	@SuppressWarnings({"unchecked", "rawtypes"})
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	public static void assertSortAndCompareListModelAttribute(
 			ModelAndView mav, String modelName, List expectedList, Comparator comparator) {
 

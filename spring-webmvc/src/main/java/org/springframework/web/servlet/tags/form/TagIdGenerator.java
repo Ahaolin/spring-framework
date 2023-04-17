@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,7 +22,7 @@ import javax.servlet.jsp.PageContext;
  * Utility class for generating '{@code id}' attributes values for JSP tags. Given the
  * name of a tag (the data bound path in most cases) returns a unique ID for that name within
  * the current {@link PageContext}. Each request for an ID for a given name will append an
- * ever increasing counter to the name itself. For instance, given the name '{@code person.name}',
+ * ever-increasing counter to the name itself. For instance, given the name '{@code person.name}',
  * the first request will give '{@code person.name1}' and the second will give
  * '{@code person.name2}'. This supports the common use case where a set of radio or check buttons
  * are generated for the same data field, with each button being a distinct tag instance.

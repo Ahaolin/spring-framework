@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,13 +16,14 @@
 
 package org.springframework.web.servlet.view;
 
+import javax.servlet.ServletRequest;
+import javax.servlet.http.HttpServletRequest;
+
 import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.RequestToViewNameTranslator;
+import org.springframework.web.util.ServletRequestPathUtils;
 import org.springframework.web.util.UrlPathHelper;
-
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * {@link RequestToViewNameTranslator} that simply transforms the URI of
@@ -58,37 +59,19 @@ public class DefaultRequestToViewNameTranslator implements RequestToViewNameTran
 
 	private static final String SLASH = "/";
 
-    /**
-     * 前缀
-     */
+
 	private String prefix = "";
-    /**
-     * 后缀
-     */
+
 	private String suffix = "";
 
-    /**
-     * 分隔符
-     */
 	private String separator = SLASH;
 
-    /**
-     * 是否移除开头 {@link #SLASH}
-     */
 	private boolean stripLeadingSlash = true;
-    /**
-     * 是否移除末尾 {@link #SLASH}
-     */
+
 	private boolean stripTrailingSlash = true;
-    /**
-     * 是否移除拓展名
-     */
+
 	private boolean stripExtension = true;
 
-    /**
-     * URL 路径工具类
-     */
-	private UrlPathHelper urlPathHelper = new UrlPathHelper();
 
 	/**
 	 * Set the prefix to prepend to generated view names.
@@ -116,7 +99,7 @@ public class DefaultRequestToViewNameTranslator implements RequestToViewNameTran
 	}
 
 	/**
-	 * Set whether or not leading slashes should be stripped from the URI when
+	 * Set whether leading slashes should be stripped from the URI when
 	 * generating the view name. Default is "true".
 	 */
 	public void setStripLeadingSlash(boolean stripLeadingSlash) {
@@ -124,7 +107,7 @@ public class DefaultRequestToViewNameTranslator implements RequestToViewNameTran
 	}
 
 	/**
-	 * Set whether or not trailing slashes should be stripped from the URI when
+	 * Set whether trailing slashes should be stripped from the URI when
 	 * generating the view name. Default is "true".
 	 */
 	public void setStripTrailingSlash(boolean stripTrailingSlash) {
@@ -132,7 +115,7 @@ public class DefaultRequestToViewNameTranslator implements RequestToViewNameTran
 	}
 
 	/**
-	 * Set whether or not file extensions should be stripped from the URI when
+	 * Set whether file extensions should be stripped from the URI when
 	 * generating the view name. Default is "true".
 	 */
 	public void setStripExtension(boolean stripExtension) {
@@ -142,25 +125,31 @@ public class DefaultRequestToViewNameTranslator implements RequestToViewNameTran
 	/**
 	 * Shortcut to same property on underlying {@link #setUrlPathHelper UrlPathHelper}.
 	 * @see org.springframework.web.util.UrlPathHelper#setAlwaysUseFullPath
+	 * @deprecated as of 5.3, the path is resolved externally and obtained with
+	 * {@link ServletRequestPathUtils#getCachedPathValue(ServletRequest)}
 	 */
+	@Deprecated
 	public void setAlwaysUseFullPath(boolean alwaysUseFullPath) {
-		this.urlPathHelper.setAlwaysUseFullPath(alwaysUseFullPath);
 	}
 
 	/**
 	 * Shortcut to same property on underlying {@link #setUrlPathHelper UrlPathHelper}.
 	 * @see org.springframework.web.util.UrlPathHelper#setUrlDecode
+	 * @deprecated as of 5.3, the path is resolved externally and obtained with
+	 * {@link ServletRequestPathUtils#getCachedPathValue(ServletRequest)}
 	 */
+	@Deprecated
 	public void setUrlDecode(boolean urlDecode) {
-		this.urlPathHelper.setUrlDecode(urlDecode);
 	}
 
 	/**
 	 * Set if ";" (semicolon) content should be stripped from the request URI.
 	 * @see org.springframework.web.util.UrlPathHelper#setRemoveSemicolonContent(boolean)
+	 * @deprecated as of 5.3, the path is resolved externally and obtained with
+	 * {@link ServletRequestPathUtils#getCachedPathValue(ServletRequest)}
 	 */
+	@Deprecated
 	public void setRemoveSemicolonContent(boolean removeSemicolonContent) {
-		this.urlPathHelper.setRemoveSemicolonContent(removeSemicolonContent);
 	}
 
 	/**
@@ -168,24 +157,26 @@ public class DefaultRequestToViewNameTranslator implements RequestToViewNameTran
 	 * the resolution of lookup paths.
 	 * <p>Use this to override the default UrlPathHelper with a custom subclass,
 	 * or to share common UrlPathHelper settings across multiple web components.
+	 * @deprecated as of 5.3, the path is resolved externally and obtained with
+	 * {@link ServletRequestPathUtils#getCachedPathValue(ServletRequest)}
 	 */
+	@Deprecated
 	public void setUrlPathHelper(UrlPathHelper urlPathHelper) {
-		Assert.notNull(urlPathHelper, "UrlPathHelper must not be null");
-		this.urlPathHelper = urlPathHelper;
 	}
+
 
 	/**
 	 * Translates the request URI of the incoming {@link HttpServletRequest}
 	 * into the view name based on the configured parameters.
-	 * @see org.springframework.web.util.UrlPathHelper#getLookupPathForRequest
+	 * @throws IllegalArgumentException if neither a parsed RequestPath, nor a
+	 * String lookupPath have been resolved and cached as a request attribute.
+	 * @see ServletRequestPathUtils#getCachedPath(ServletRequest)
 	 * @see #transformPath
 	 */
 	@Override
 	public String getViewName(HttpServletRequest request) {
-	    // 获得请求路径
-		String lookupPath = this.urlPathHelper.getLookupPathForRequest(request);
-		// 获得视图名
-		return (this.prefix + transformPath(lookupPath) + this.suffix);
+		String path = ServletRequestPathUtils.getCachedPathValue(request);
+		return (this.prefix + transformPath(path) + this.suffix);
 	}
 
 	/**
@@ -199,19 +190,15 @@ public class DefaultRequestToViewNameTranslator implements RequestToViewNameTran
 	@Nullable
 	protected String transformPath(String lookupPath) {
 		String path = lookupPath;
-		// 移除开头 SLASH
 		if (this.stripLeadingSlash && path.startsWith(SLASH)) {
 			path = path.substring(1);
 		}
-		// 移除末尾 SLASH
 		if (this.stripTrailingSlash && path.endsWith(SLASH)) {
 			path = path.substring(0, path.length() - 1);
 		}
-		// 移除拓展名
 		if (this.stripExtension) {
 			path = StringUtils.stripFilenameExtension(path);
 		}
-		// 替换分隔符
 		if (!SLASH.equals(this.separator)) {
 			path = StringUtils.replace(path, SLASH, this.separator);
 		}

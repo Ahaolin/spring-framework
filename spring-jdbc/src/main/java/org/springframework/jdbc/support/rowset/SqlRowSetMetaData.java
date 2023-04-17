@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -145,7 +145,7 @@ public interface SqlRowSetMetaData {
 	/**
 	 * Indicate whether the case of the designated column is significant.
 	 * @param columnIndex the index of the column
-	 * @return true if the case sensitive, false otherwise
+	 * @return true if the column is case-sensitive, false otherwise
 	 * @see java.sql.ResultSetMetaData#isCaseSensitive(int)
 	 */
 	boolean isCaseSensitive(int columnIndex) throws InvalidResultSetAccessException;

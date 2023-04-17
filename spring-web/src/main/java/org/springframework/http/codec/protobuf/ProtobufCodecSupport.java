@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,7 +34,8 @@ public abstract class ProtobufCodecSupport {
 	static final List<MimeType> MIME_TYPES = Collections.unmodifiableList(
 			Arrays.asList(
 					new MimeType("application", "x-protobuf"),
-					new MimeType("application", "octet-stream")));
+					new MimeType("application", "octet-stream"),
+					new MimeType("application", "vnd.google.protobuf")));
 
 	static final String DELIMITED_KEY = "delimited";
 

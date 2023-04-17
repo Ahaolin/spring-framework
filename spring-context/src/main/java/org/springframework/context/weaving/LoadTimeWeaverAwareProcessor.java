@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,8 +26,6 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
- * {@link LoadTimeWeaverAware} 处理器
- *
  * {@link org.springframework.beans.factory.config.BeanPostProcessor}
  * implementation that passes the context's default {@link LoadTimeWeaver}
  * to beans that implement the {@link LoadTimeWeaverAware} interface.
@@ -45,9 +43,6 @@ import org.springframework.util.Assert;
  */
 public class LoadTimeWeaverAwareProcessor implements BeanPostProcessor, BeanFactoryAware {
 
-    /**
-     * LoadTimeWeaver 对象
-     */
 	@Nullable
 	private LoadTimeWeaver loadTimeWeaver;
 
@@ -88,23 +83,23 @@ public class LoadTimeWeaverAwareProcessor implements BeanPostProcessor, BeanFact
 		this.beanFactory = beanFactory;
 	}
 
+
 	@Override
 	public void setBeanFactory(BeanFactory beanFactory) {
 		this.beanFactory = beanFactory;
 	}
 
+
 	@Override
 	public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
 		if (bean instanceof LoadTimeWeaverAware) {
 			LoadTimeWeaver ltw = this.loadTimeWeaver;
-			// 不存在，则从 BeanFactory 中获得
 			if (ltw == null) {
 				Assert.state(this.beanFactory != null,
 						"BeanFactory required if no LoadTimeWeaver explicitly specified");
 				ltw = this.beanFactory.getBean(
 						ConfigurableApplicationContext.LOAD_TIME_WEAVER_BEAN_NAME, LoadTimeWeaver.class);
 			}
-			// 设置 LoadTimeWeaverAware
 			((LoadTimeWeaverAware) bean).setLoadTimeWeaver(ltw);
 		}
 		return bean;

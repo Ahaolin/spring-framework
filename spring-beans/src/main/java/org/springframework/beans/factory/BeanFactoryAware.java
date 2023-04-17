@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,9 +41,6 @@ import org.springframework.beans.BeansException;
 public interface BeanFactoryAware extends Aware {
 
 	/**
-     * 将 BeanFactory 提供给 bean 实例回调
-     * 调用时机和 setBeanClassLoader 一样
-     *
 	 * Callback that supplies the owning factory to a bean instance.
 	 * <p>Invoked after the population of normal bean properties
 	 * but before an initialization callback such as

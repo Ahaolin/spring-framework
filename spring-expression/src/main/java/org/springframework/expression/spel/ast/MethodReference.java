@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,6 +23,7 @@ import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.StringJoiner;
 
 import org.springframework.asm.Label;
 import org.springframework.asm.MethodVisitor;
@@ -64,8 +65,8 @@ public class MethodReference extends SpelNodeImpl {
 	private volatile CachedMethodExecutor cachedExecutor;
 
 
-	public MethodReference(boolean nullSafe, String methodName, int pos, SpelNodeImpl... arguments) {
-		super(pos, arguments);
+	public MethodReference(boolean nullSafe, String methodName, int startPos, int endPos, SpelNodeImpl... arguments) {
+		super(startPos, endPos, arguments);
 		this.name = methodName;
 		this.nullSafe = nullSafe;
 	}
@@ -199,8 +200,7 @@ public class MethodReference extends SpelNodeImpl {
 			EvaluationContext evaluationContext) throws SpelEvaluationException {
 
 		AccessException accessException = null;
-		List<MethodResolver> methodResolvers = evaluationContext.getMethodResolvers();
-		for (MethodResolver methodResolver : methodResolvers) {
+		for (MethodResolver methodResolver : evaluationContext.getMethodResolvers()) {
 			try {
 				MethodExecutor methodExecutor = methodResolver.resolve(
 						evaluationContext, targetObject, this.name, argumentTypes);
@@ -259,16 +259,11 @@ public class MethodReference extends SpelNodeImpl {
 
 	@Override
 	public String toStringAST() {
-		StringBuilder sb = new StringBuilder(this.name);
-		sb.append("(");
+		StringJoiner sj = new StringJoiner(",", "(", ")");
 		for (int i = 0; i < getChildCount(); i++) {
-			if (i > 0) {
-				sb.append(",");
-			}
-			sb.append(getChild(i).toStringAST());
+			sj.add(getChild(i).toStringAST());
 		}
-		sb.append(")");
-		return sb.toString();
+		return this.name + sj;
 	}
 
 	/**
@@ -293,12 +288,9 @@ public class MethodReference extends SpelNodeImpl {
 		if (executor.didArgumentConversionOccur()) {
 			return false;
 		}
-		Class<?> clazz = executor.getMethod().getDeclaringClass();
-		if (!Modifier.isPublic(clazz.getModifiers()) && executor.getPublicDeclaringClass() == null) {
-			return false;
-		}
 
-		return true;
+		Class<?> clazz = executor.getMethod().getDeclaringClass();
+		return (Modifier.isPublic(clazz.getModifiers()) || executor.getPublicDeclaringClass() != null);
 	}
 
 	@Override
@@ -351,8 +343,9 @@ public class MethodReference extends SpelNodeImpl {
 		}
 
 		generateCodeForArguments(mv, cf, method, this.children);
-		mv.visitMethodInsn((isStaticMethod ? INVOKESTATIC : INVOKEVIRTUAL), classDesc, method.getName(),
-				CodeFlow.createSignatureDescriptor(method), method.getDeclaringClass().isInterface());
+		mv.visitMethodInsn((isStaticMethod ? INVOKESTATIC : (method.isDefault() ? INVOKEINTERFACE : INVOKEVIRTUAL)),
+				classDesc, method.getName(), CodeFlow.createSignatureDescriptor(method),
+				method.getDeclaringClass().isInterface());
 		cf.pushDescriptor(this.exitTypeDescriptor);
 
 		if (this.originalPrimitiveExitTypeDescriptor != null) {

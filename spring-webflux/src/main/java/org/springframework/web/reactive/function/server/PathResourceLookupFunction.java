@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,8 +41,6 @@ import org.springframework.web.util.pattern.PathPatternParser;
  */
 class PathResourceLookupFunction implements Function<ServerRequest, Mono<Resource>> {
 
-	private static final PathPatternParser PATTERN_PARSER = new PathPatternParser();
-
 	private final PathPattern pattern;
 
 	private final Resource location;
@@ -51,14 +49,14 @@ class PathResourceLookupFunction implements Function<ServerRequest, Mono<Resourc
 	public PathResourceLookupFunction(String pattern, Resource location) {
 		Assert.hasLength(pattern, "'pattern' must not be empty");
 		Assert.notNull(location, "'location' must not be null");
-		this.pattern = PATTERN_PARSER.parse(pattern);
+		this.pattern = PathPatternParser.defaultInstance.parse(pattern);
 		this.location = location;
 	}
 
 
 	@Override
 	public Mono<Resource> apply(ServerRequest request) {
-		PathContainer pathContainer = request.pathContainer();
+		PathContainer pathContainer = request.requestPath().pathWithinApplication();
 		if (!this.pattern.matches(pathContainer)) {
 			return Mono.empty();
 		}
@@ -74,7 +72,7 @@ class PathResourceLookupFunction implements Function<ServerRequest, Mono<Resourc
 
 		try {
 			Resource resource = this.location.createRelative(path);
-			if (resource.exists() && resource.isReadable() && isResourceUnderLocation(resource)) {
+			if (resource.isReadable() && isResourceUnderLocation(resource)) {
 				return Mono.just(resource);
 			}
 			else {
@@ -113,11 +111,8 @@ class PathResourceLookupFunction implements Function<ServerRequest, Mono<Resourc
 				return true;
 			}
 		}
-		if (path.contains("")) {
-			path = StringUtils.cleanPath(path);
-			if (path.contains("../")) {
-				return true;
-			}
+		if (path.contains("..") && StringUtils.cleanPath(path).contains("../")) {
+			return true;
 		}
 		return false;
 	}

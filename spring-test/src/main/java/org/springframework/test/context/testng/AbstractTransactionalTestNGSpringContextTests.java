@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,8 +26,14 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.lang.Nullable;
 import org.springframework.test.context.TestExecutionListeners;
+import org.springframework.test.context.event.ApplicationEventsTestExecutionListener;
+import org.springframework.test.context.event.EventPublishingTestExecutionListener;
 import org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener;
+import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
+import org.springframework.test.context.support.DirtiesContextBeforeModesTestExecutionListener;
+import org.springframework.test.context.support.DirtiesContextTestExecutionListener;
 import org.springframework.test.context.transaction.TransactionalTestExecutionListener;
+import org.springframework.test.context.web.ServletTestExecutionListener;
 import org.springframework.test.jdbc.JdbcTestUtils;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,15 +56,20 @@ import org.springframework.util.Assert;
  * <p>Concrete subclasses must fulfill the same requirements outlined in
  * {@link AbstractTestNGSpringContextTests}.
  *
- * <p>The following {@link org.springframework.test.context.TestExecutionListener
- * TestExecutionListeners} are configured by default:
+ * <p>This class explicitly registers the following {@code TestExecutionListener}
+ * implementations. If you want to switch to using the <em>default</em> set of
+ * listeners, see the class-level Javadoc for
+ * {@link TestExecutionListeners @TestExecutionListeners} for details.
  *
  * <ul>
  * <li>{@link org.springframework.test.context.web.ServletTestExecutionListener}
+ * <li>{@link org.springframework.test.context.support.DirtiesContextBeforeModesTestExecutionListener}
+ * <li>{@link org.springframework.test.context.event.ApplicationEventsTestExecutionListener}</li>
  * <li>{@link org.springframework.test.context.support.DependencyInjectionTestExecutionListener}
  * <li>{@link org.springframework.test.context.support.DirtiesContextTestExecutionListener}
  * <li>{@link org.springframework.test.context.transaction.TransactionalTestExecutionListener}
  * <li>{@link org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener}
+ * <li>{@link org.springframework.test.context.event.EventPublishingTestExecutionListener}
  * </ul>
  *
  * @author Sam Brannen
@@ -77,7 +88,10 @@ import org.springframework.util.Assert;
  * @see org.springframework.test.jdbc.JdbcTestUtils
  * @see org.springframework.test.context.junit4.AbstractTransactionalJUnit4SpringContextTests
  */
-@TestExecutionListeners({TransactionalTestExecutionListener.class, SqlScriptsTestExecutionListener.class})
+@TestExecutionListeners(listeners = { ServletTestExecutionListener.class, DirtiesContextBeforeModesTestExecutionListener.class,
+	ApplicationEventsTestExecutionListener.class, DependencyInjectionTestExecutionListener.class,
+	DirtiesContextTestExecutionListener.class, TransactionalTestExecutionListener.class,
+	SqlScriptsTestExecutionListener.class, EventPublishingTestExecutionListener.class }, inheritListeners = false)
 @Transactional
 public abstract class AbstractTransactionalTestNGSpringContextTests extends AbstractTestNGSpringContextTests {
 
@@ -165,7 +179,7 @@ public abstract class AbstractTransactionalTestNGSpringContextTests extends Abst
 	}
 
 	/**
-	 * Convenience method for dropping all of the specified tables.
+	 * Convenience method for dropping all the specified tables.
 	 * <p>Use with caution outside of a transaction!
 	 * @param names the names of the tables to drop
 	 * @since 3.2
@@ -181,7 +195,7 @@ public abstract class AbstractTransactionalTestNGSpringContextTests extends Abst
 	 * <p>The script will normally be loaded by classpath.
 	 * <p><b>Do not use this method to execute DDL if you expect rollback.</b>
 	 * @param sqlResourcePath the Spring resource path for the SQL script
-	 * @param continueOnError whether or not to continue without throwing an
+	 * @param continueOnError whether to continue without throwing an
 	 * exception in the event of an error
 	 * @throws DataAccessException if there is an error executing a statement
 	 * @see ResourceDatabasePopulator

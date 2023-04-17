@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,12 +16,20 @@
 
 package org.springframework.beans;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.Stream;
+
 import org.springframework.lang.Nullable;
 import org.springframework.util.StringUtils;
-
-import java.io.Serializable;
-import java.util.*;
-import java.util.stream.Stream;
 
 /**
  * The default implementation of the {@link PropertyValues} interface.
@@ -41,7 +49,7 @@ public class MutablePropertyValues implements PropertyValues, Serializable {
 	@Nullable
 	private Set<String> processedProperties;
 
-	private volatile boolean converted = false;
+	private volatile boolean converted;
 
 
 	/**
@@ -163,16 +171,12 @@ public class MutablePropertyValues implements PropertyValues, Serializable {
 	public MutablePropertyValues addPropertyValue(PropertyValue pv) {
 		for (int i = 0; i < this.propertyValueList.size(); i++) {
 			PropertyValue currentPv = this.propertyValueList.get(i);
-			// 匹配
 			if (currentPv.getName().equals(pv.getName())) {
-			    // 合并属性
 				pv = mergeIfRequired(pv, currentPv);
-				// 覆盖属性
 				setPropertyValueAt(pv, i);
 				return this;
 			}
 		}
-		// 未匹配到，添加到 propertyValueList 中
 		this.propertyValueList.add(pv);
 		return this;
 	}
@@ -323,7 +327,7 @@ public class MutablePropertyValues implements PropertyValues, Serializable {
 	/**
 	 * Register the specified property as "processed" in the sense
 	 * of some processor calling the corresponding setter method
-	 * outside of the PropertyValue(s) mechanism.
+	 * outside the PropertyValue(s) mechanism.
 	 * <p>This will lead to {@code true} being returned from
 	 * a {@link #contains} call for the specified property.
 	 * @param propertyName the name of the property.
@@ -363,7 +367,7 @@ public class MutablePropertyValues implements PropertyValues, Serializable {
 
 
 	@Override
-	public boolean equals(Object other) {
+	public boolean equals(@Nullable Object other) {
 		return (this == other || (other instanceof MutablePropertyValues &&
 				this.propertyValueList.equals(((MutablePropertyValues) other).propertyValueList)));
 	}
@@ -376,11 +380,10 @@ public class MutablePropertyValues implements PropertyValues, Serializable {
 	@Override
 	public String toString() {
 		PropertyValue[] pvs = getPropertyValues();
-		StringBuilder sb = new StringBuilder("PropertyValues: length=").append(pvs.length);
 		if (pvs.length > 0) {
-			sb.append("; ").append(StringUtils.arrayToDelimitedString(pvs, "; "));
+			return "PropertyValues: length=" + pvs.length + "; " + StringUtils.arrayToDelimitedString(pvs, "; ");
 		}
-		return sb.toString();
+		return "PropertyValues: length=0";
 	}
 
 }

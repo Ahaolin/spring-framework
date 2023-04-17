@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,11 +28,6 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
- * <pre>
- *     class path 类型资源的实现。使用给定的 ClassLoader 或者给定的 Class 来加载资源。
- * </pre>
- *
- *
  * {@link Resource} implementation for class path resources. Uses either a
  * given {@link ClassLoader} or a given {@link Class} for loading resources.
  *
@@ -148,19 +143,38 @@ public class ClassPathResource extends AbstractFileResolvingResource {
 	}
 
 	/**
+	 * This implementation checks for the resolution of a resource URL upfront,
+	 * then proceeding with {@link AbstractFileResolvingResource}'s length check.
+	 * @see java.lang.ClassLoader#getResource(String)
+	 * @see java.lang.Class#getResource(String)
+	 */
+	@Override
+	public boolean isReadable() {
+		URL url = resolveURL();
+		return (url != null && checkReadable(url));
+	}
+
+	/**
 	 * Resolves a URL for the underlying class path resource.
 	 * @return the resolved URL, or {@code null} if not resolvable
 	 */
 	@Nullable
 	protected URL resolveURL() {
-		if (this.clazz != null) {
-			return this.clazz.getResource(this.path);
+		try {
+			if (this.clazz != null) {
+				return this.clazz.getResource(this.path);
+			}
+			else if (this.classLoader != null) {
+				return this.classLoader.getResource(this.path);
+			}
+			else {
+				return ClassLoader.getSystemResource(this.path);
+			}
 		}
-		else if (this.classLoader != null) {
-			return this.classLoader.getResource(this.path);
-		}
-		else {
-			return ClassLoader.getSystemResource(this.path);
+		catch (IllegalArgumentException ex) {
+			// Should not happen according to the JDK's contract:
+			// see https://github.com/openjdk/jdk/pull/2662
+			return null;
 		}
 	}
 
@@ -249,7 +263,7 @@ public class ClassPathResource extends AbstractFileResolvingResource {
 	 * This implementation compares the underlying class path locations.
 	 */
 	@Override
-	public boolean equals(Object other) {
+	public boolean equals(@Nullable Object other) {
 		if (this == other) {
 			return true;
 		}

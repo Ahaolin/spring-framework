@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +19,7 @@ package org.springframework.scheduling.annotation;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -29,6 +30,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -59,6 +61,7 @@ import org.springframework.core.MethodIntrospector;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.Trigger;
@@ -75,9 +78,10 @@ import org.springframework.util.StringUtils;
 import org.springframework.util.StringValueResolver;
 
 /**
- * Bean post-processor that registers methods annotated with @{@link Scheduled}
- * to be invoked by a {@link org.springframework.scheduling.TaskScheduler} according
- * to the "fixedRate", "fixedDelay", or "cron" expression provided via the annotation.
+ * Bean post-processor that registers methods annotated with
+ * {@link Scheduled @Scheduled} to be invoked by a
+ * {@link org.springframework.scheduling.TaskScheduler} according to the
+ * "fixedRate", "fixedDelay", or "cron" expression provided via the annotation.
  *
  * <p>This post-processor is automatically registered by Spring's
  * {@code <task:annotation-driven>} XML element, and also by the
@@ -85,13 +89,16 @@ import org.springframework.util.StringValueResolver;
  *
  * <p>Autodetects any {@link SchedulingConfigurer} instances in the container,
  * allowing for customization of the scheduler to be used or for fine-grained
- * control over task registration (e.g. registration of {@link Trigger} tasks.
- * See the @{@link EnableScheduling} javadocs for complete usage details.
+ * control over task registration (e.g. registration of {@link Trigger} tasks).
+ * See the {@link EnableScheduling @EnableScheduling} javadocs for complete usage
+ * details.
  *
  * @author Mark Fisher
  * @author Juergen Hoeller
  * @author Chris Beams
  * @author Elizabeth Chatman
+ * @author Victor Brown
+ * @author Sam Brannen
  * @since 3.0
  * @see Scheduled
  * @see EnableScheduling
@@ -148,7 +155,8 @@ public class ScheduledAnnotationBeanPostProcessor
 	/**
 	 * Create a {@code ScheduledAnnotationBeanPostProcessor} delegating to the
 	 * specified {@link ScheduledTaskRegistrar}.
-	 * @param registrar the ScheduledTaskRegistrar to register @Scheduled tasks on
+	 * @param registrar the ScheduledTaskRegistrar to register {@code @Scheduled}
+	 * tasks on
 	 * @since 5.1
 	 */
 	public ScheduledAnnotationBeanPostProcessor(ScheduledTaskRegistrar registrar) {
@@ -254,7 +262,10 @@ public class ScheduledAnnotationBeanPostProcessor
 				this.registrar.setTaskScheduler(resolveSchedulerBean(this.beanFactory, TaskScheduler.class, false));
 			}
 			catch (NoUniqueBeanDefinitionException ex) {
-				logger.trace("Could not find unique TaskScheduler bean", ex);
+				if (logger.isTraceEnabled()) {
+					logger.trace("Could not find unique TaskScheduler bean - attempting to resolve by name: " +
+							ex.getMessage());
+				}
 				try {
 					this.registrar.setTaskScheduler(resolveSchedulerBean(this.beanFactory, TaskScheduler.class, true));
 				}
@@ -269,13 +280,19 @@ public class ScheduledAnnotationBeanPostProcessor
 				}
 			}
 			catch (NoSuchBeanDefinitionException ex) {
-				logger.trace("Could not find default TaskScheduler bean", ex);
+				if (logger.isTraceEnabled()) {
+					logger.trace("Could not find default TaskScheduler bean - attempting to find ScheduledExecutorService: " +
+							ex.getMessage());
+				}
 				// Search for ScheduledExecutorService bean next...
 				try {
 					this.registrar.setScheduler(resolveSchedulerBean(this.beanFactory, ScheduledExecutorService.class, false));
 				}
 				catch (NoUniqueBeanDefinitionException ex2) {
-					logger.trace("Could not find unique ScheduledExecutorService bean", ex2);
+					if (logger.isTraceEnabled()) {
+						logger.trace("Could not find unique ScheduledExecutorService bean - attempting to resolve by name: " +
+								ex2.getMessage());
+					}
 					try {
 						this.registrar.setScheduler(resolveSchedulerBean(this.beanFactory, ScheduledExecutorService.class, true));
 					}
@@ -290,7 +307,10 @@ public class ScheduledAnnotationBeanPostProcessor
 					}
 				}
 				catch (NoSuchBeanDefinitionException ex2) {
-					logger.trace("Could not find default ScheduledExecutorService bean", ex2);
+					if (logger.isTraceEnabled()) {
+						logger.trace("Could not find default ScheduledExecutorService bean - falling back to default: " +
+								ex2.getMessage());
+					}
 					// Giving up -> falling back to default scheduler within the registrar...
 					logger.info("No TaskScheduler/ScheduledExecutorService bean found for scheduled processing");
 				}
@@ -340,12 +360,13 @@ public class ScheduledAnnotationBeanPostProcessor
 		}
 
 		Class<?> targetClass = AopProxyUtils.ultimateTargetClass(bean);
-		if (!this.nonAnnotatedClasses.contains(targetClass)) {
+		if (!this.nonAnnotatedClasses.contains(targetClass) &&
+				AnnotationUtils.isCandidateClass(targetClass, Arrays.asList(Scheduled.class, Schedules.class))) {
 			Map<Method, Set<Scheduled>> annotatedMethods = MethodIntrospector.selectMethods(targetClass,
 					(MethodIntrospector.MetadataLookup<Set<Scheduled>>) method -> {
-						Set<Scheduled> scheduledMethods = AnnotatedElementUtils.getMergedRepeatableAnnotations(
+						Set<Scheduled> scheduledAnnotations = AnnotatedElementUtils.getMergedRepeatableAnnotations(
 								method, Scheduled.class, Schedules.class);
-						return (!scheduledMethods.isEmpty() ? scheduledMethods : null);
+						return (!scheduledAnnotations.isEmpty() ? scheduledAnnotations : null);
 					});
 			if (annotatedMethods.isEmpty()) {
 				this.nonAnnotatedClasses.add(targetClass);
@@ -355,8 +376,8 @@ public class ScheduledAnnotationBeanPostProcessor
 			}
 			else {
 				// Non-empty set of methods
-				annotatedMethods.forEach((method, scheduledMethods) ->
-						scheduledMethods.forEach(scheduled -> processScheduled(scheduled, method, bean)));
+				annotatedMethods.forEach((method, scheduledAnnotations) ->
+						scheduledAnnotations.forEach(scheduled -> processScheduled(scheduled, method, bean)));
 				if (logger.isTraceEnabled()) {
 					logger.trace(annotatedMethods.size() + " @Scheduled methods processed on bean '" + beanName +
 							"': " + annotatedMethods);
@@ -368,7 +389,7 @@ public class ScheduledAnnotationBeanPostProcessor
 
 	/**
 	 * Process the given {@code @Scheduled} method declaration on the given bean.
-	 * @param scheduled the @Scheduled annotation
+	 * @param scheduled the {@code @Scheduled} annotation
 	 * @param method the method that the annotation has been declared on
 	 * @param bean the target bean instance
 	 * @see #createRunnable(Object, Method)
@@ -383,7 +404,7 @@ public class ScheduledAnnotationBeanPostProcessor
 			Set<ScheduledTask> tasks = new LinkedHashSet<>(4);
 
 			// Determine initial delay
-			long initialDelay = scheduled.initialDelay();
+			long initialDelay = convertToMillis(scheduled.initialDelay(), scheduled.timeUnit());
 			String initialDelayString = scheduled.initialDelayString();
 			if (StringUtils.hasText(initialDelayString)) {
 				Assert.isTrue(initialDelay < 0, "Specify 'initialDelay' or 'initialDelayString', not both");
@@ -392,7 +413,7 @@ public class ScheduledAnnotationBeanPostProcessor
 				}
 				if (StringUtils.hasLength(initialDelayString)) {
 					try {
-						initialDelay = parseDelayAsLong(initialDelayString);
+						initialDelay = convertToMillis(initialDelayString, scheduled.timeUnit());
 					}
 					catch (RuntimeException ex) {
 						throw new IllegalArgumentException(
@@ -431,12 +452,13 @@ public class ScheduledAnnotationBeanPostProcessor
 			}
 
 			// Check fixed delay
-			long fixedDelay = scheduled.fixedDelay();
+			long fixedDelay = convertToMillis(scheduled.fixedDelay(), scheduled.timeUnit());
 			if (fixedDelay >= 0) {
 				Assert.isTrue(!processedSchedule, errorMessage);
 				processedSchedule = true;
 				tasks.add(this.registrar.scheduleFixedDelayTask(new FixedDelayTask(runnable, fixedDelay, initialDelay)));
 			}
+
 			String fixedDelayString = scheduled.fixedDelayString();
 			if (StringUtils.hasText(fixedDelayString)) {
 				if (this.embeddedValueResolver != null) {
@@ -446,7 +468,7 @@ public class ScheduledAnnotationBeanPostProcessor
 					Assert.isTrue(!processedSchedule, errorMessage);
 					processedSchedule = true;
 					try {
-						fixedDelay = parseDelayAsLong(fixedDelayString);
+						fixedDelay = convertToMillis(fixedDelayString, scheduled.timeUnit());
 					}
 					catch (RuntimeException ex) {
 						throw new IllegalArgumentException(
@@ -457,7 +479,7 @@ public class ScheduledAnnotationBeanPostProcessor
 			}
 
 			// Check fixed rate
-			long fixedRate = scheduled.fixedRate();
+			long fixedRate = convertToMillis(scheduled.fixedRate(), scheduled.timeUnit());
 			if (fixedRate >= 0) {
 				Assert.isTrue(!processedSchedule, errorMessage);
 				processedSchedule = true;
@@ -472,7 +494,7 @@ public class ScheduledAnnotationBeanPostProcessor
 					Assert.isTrue(!processedSchedule, errorMessage);
 					processedSchedule = true;
 					try {
-						fixedRate = parseDelayAsLong(fixedRateString);
+						fixedRate = convertToMillis(fixedRateString, scheduled.timeUnit());
 					}
 					catch (RuntimeException ex) {
 						throw new IllegalArgumentException(
@@ -512,11 +534,19 @@ public class ScheduledAnnotationBeanPostProcessor
 		return new ScheduledMethodRunnable(target, invocableMethod);
 	}
 
-	private static long parseDelayAsLong(String value) throws RuntimeException {
-		if (value.length() > 1 && (isP(value.charAt(0)) || isP(value.charAt(1)))) {
+	private static long convertToMillis(long value, TimeUnit timeUnit) {
+		return TimeUnit.MILLISECONDS.convert(value, timeUnit);
+	}
+
+	private static long convertToMillis(String value, TimeUnit timeUnit) {
+		if (isDurationString(value)) {
 			return Duration.parse(value).toMillis();
 		}
-		return Long.parseLong(value);
+		return convertToMillis(Long.parseLong(value), timeUnit);
+	}
+
+	private static boolean isDurationString(String value) {
+		return (value.length() > 1 && (isP(value.charAt(0)) || isP(value.charAt(1))));
 	}
 
 	private static boolean isP(char ch) {

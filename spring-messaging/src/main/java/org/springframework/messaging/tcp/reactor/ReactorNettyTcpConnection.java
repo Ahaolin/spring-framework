@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,15 +17,15 @@
 package org.springframework.messaging.tcp.reactor;
 
 import io.netty.buffer.ByteBuf;
-import reactor.core.publisher.DirectProcessor;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 import reactor.netty.NettyInbound;
 import reactor.netty.NettyOutbound;
 
 import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MonoToListenableFutureAdapter;
 import org.springframework.messaging.tcp.TcpConnection;
 import org.springframework.util.concurrent.ListenableFuture;
+import org.springframework.util.concurrent.MonoToListenableFutureAdapter;
 
 /**
  * Reactor Netty based implementation of {@link TcpConnection}.
@@ -42,16 +42,16 @@ public class ReactorNettyTcpConnection<P> implements TcpConnection<P> {
 
 	private final ReactorNettyCodec<P> codec;
 
-	private final DirectProcessor<Void> closeProcessor;
+	private final Sinks.Empty<Void> completionSink;
 
 
 	public ReactorNettyTcpConnection(NettyInbound inbound, NettyOutbound outbound,
-			ReactorNettyCodec<P> codec, DirectProcessor<Void> closeProcessor) {
+			ReactorNettyCodec<P> codec, Sinks.Empty<Void> completionSink) {
 
 		this.inbound = inbound;
 		this.outbound = outbound;
 		this.codec = codec;
-		this.closeProcessor = closeProcessor;
+		this.completionSink = completionSink;
 	}
 
 
@@ -64,20 +64,19 @@ public class ReactorNettyTcpConnection<P> implements TcpConnection<P> {
 	}
 
 	@Override
-	@SuppressWarnings("deprecation")
 	public void onReadInactivity(Runnable runnable, long inactivityDuration) {
 		this.inbound.withConnection(conn -> conn.onReadIdle(inactivityDuration, runnable));
 	}
 
 	@Override
-	@SuppressWarnings("deprecation")
 	public void onWriteInactivity(Runnable runnable, long inactivityDuration) {
 		this.inbound.withConnection(conn -> conn.onWriteIdle(inactivityDuration, runnable));
 	}
 
 	@Override
 	public void close() {
-		this.closeProcessor.onComplete();
+		// Ignore result: concurrent attempts to complete are ok
+		this.completionSink.tryEmitEmpty();
 	}
 
 }

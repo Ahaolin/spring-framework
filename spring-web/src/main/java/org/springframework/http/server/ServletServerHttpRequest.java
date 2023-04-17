@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,6 +34,7 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.http.HttpHeaders;
@@ -54,8 +55,6 @@ import org.springframework.util.StringUtils;
  * @since 3.0
  */
 public class ServletServerHttpRequest implements ServerHttpRequest {
-
-	protected static final String FORM_CONTENT_TYPE = "application/x-www-form-urlencoded";
 
 	protected static final Charset FORM_CHARSET = StandardCharsets.UTF_8;
 
@@ -157,7 +156,9 @@ public class ServletServerHttpRequest implements ServerHttpRequest {
 					String requestContentType = this.servletRequest.getContentType();
 					if (StringUtils.hasLength(requestContentType)) {
 						contentType = MediaType.parseMediaType(requestContentType);
-						this.headers.setContentType(contentType);
+						if (contentType.isConcrete()) {
+							this.headers.setContentType(contentType);
+						}
 					}
 				}
 				if (contentType != null && contentType.getCharset() == null) {
@@ -194,7 +195,7 @@ public class ServletServerHttpRequest implements ServerHttpRequest {
 
 	@Override
 	public InetSocketAddress getLocalAddress() {
-		return new InetSocketAddress(this.servletRequest.getLocalName(), this.servletRequest.getLocalPort());
+		return new InetSocketAddress(this.servletRequest.getLocalAddr(), this.servletRequest.getLocalPort());
 	}
 
 	@Override
@@ -215,7 +216,7 @@ public class ServletServerHttpRequest implements ServerHttpRequest {
 	@Override
 	public ServerHttpAsyncRequestControl getAsyncRequestControl(ServerHttpResponse response) {
 		if (this.asyncRequestControl == null) {
-			if (!ServletServerHttpResponse.class.isInstance(response)) {
+			if (!(response instanceof ServletServerHttpResponse)) {
 				throw new IllegalArgumentException(
 						"Response must be a ServletServerHttpResponse: " + response.getClass());
 			}
@@ -228,7 +229,7 @@ public class ServletServerHttpRequest implements ServerHttpRequest {
 
 	private static boolean isFormPost(HttpServletRequest request) {
 		String contentType = request.getContentType();
-		return (contentType != null && contentType.contains(FORM_CONTENT_TYPE) &&
+		return (contentType != null && contentType.contains(MediaType.APPLICATION_FORM_URLENCODED_VALUE) &&
 				HttpMethod.POST.matches(request.getMethod()));
 	}
 
@@ -243,9 +244,10 @@ public class ServletServerHttpRequest implements ServerHttpRequest {
 		Writer writer = new OutputStreamWriter(bos, FORM_CHARSET);
 
 		Map<String, String[]> form = request.getParameterMap();
-		for (Iterator<String> nameIterator = form.keySet().iterator(); nameIterator.hasNext();) {
-			String name = nameIterator.next();
-			List<String> values = Arrays.asList(form.get(name));
+		for (Iterator<Map.Entry<String, String[]>> entryIterator = form.entrySet().iterator(); entryIterator.hasNext();) {
+			Map.Entry<String, String[]> entry = entryIterator.next();
+			String name = entry.getKey();
+			List<String> values = Arrays.asList(entry.getValue());
 			for (Iterator<String> valueIterator = values.iterator(); valueIterator.hasNext();) {
 				String value = valueIterator.next();
 				writer.write(URLEncoder.encode(name, FORM_CHARSET.name()));
@@ -257,7 +259,7 @@ public class ServletServerHttpRequest implements ServerHttpRequest {
 					}
 				}
 			}
-			if (nameIterator.hasNext()) {
+			if (entryIterator.hasNext()) {
 				writer.append('&');
 			}
 		}

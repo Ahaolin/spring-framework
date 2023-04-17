@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -138,7 +138,7 @@ public class SimpMessagingTemplate extends AbstractMessageSendingTemplate<String
 	 */
 	@Override
 	public void send(Message<?> message) {
-		Assert.notNull(message, "Message is required");
+		Assert.notNull(message, "Message must not be null");
 		String destination = SimpMessageHeaderAccessor.getDestination(message.getHeaders());
 		if (destination != null) {
 			sendInternal(message);
@@ -224,6 +224,8 @@ public class SimpMessagingTemplate extends AbstractMessageSendingTemplate<String
 			throws MessagingException {
 
 		Assert.notNull(user, "User must not be null");
+		String username = user;
+		Assert.isTrue(!user.contains("%2F"), () -> "Invalid sequence \"%2F\" in user name: " + username);
 		user = StringUtils.replace(user, "/", "%2F");
 		destination = destination.startsWith("/") ? destination : "/" + destination;
 		super.convertAndSend(this.destinationPrefix + user + destination, payload, headers, postProcessor);

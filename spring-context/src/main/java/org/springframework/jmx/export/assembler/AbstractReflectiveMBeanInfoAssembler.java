@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +20,7 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.management.Descriptor;
 import javax.management.JMException;
 import javax.management.MBeanOperationInfo;
@@ -42,7 +43,7 @@ import org.springframework.lang.Nullable;
  *
  * <p>The logic for creating MBean metadata from the reflective metadata
  * is contained in this class, but this class makes no decisions as to
- * which methods and properties are to be exposed. Instead it gives
+ * which methods and properties are to be exposed. Instead, it gives
  * subclasses a chance to 'vote' on each property or method through
  * the {@code includeXXX} methods.
  *
@@ -176,7 +177,7 @@ public abstract class AbstractReflectiveMBeanInfoAssembler extends AbstractMBean
 	private Integer defaultCurrencyTimeLimit;
 
 	/**
-	 * Indicates whether or not strict casing is being used for attributes.
+	 * Indicates whether strict casing is being used for attributes.
 	 */
 	private boolean useStrictCasing = true;
 

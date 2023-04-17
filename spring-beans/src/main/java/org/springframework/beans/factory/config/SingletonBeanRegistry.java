@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,10 +19,6 @@ package org.springframework.beans.factory.config;
 import org.springframework.lang.Nullable;
 
 /**
- * <pre>
- *     该对象提供了关于单例Bean的增删改查方法
- * </pre>
- *
  * Interface that defines a registry for shared bean instances.
  * Can be implemented by {@link org.springframework.beans.factory.BeanFactory}
  * implementations in order to expose their singleton management facility

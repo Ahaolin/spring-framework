@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,14 +16,14 @@
 
 package org.springframework.context.support;
 
+import java.io.IOException;
+
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextException;
 import org.springframework.lang.Nullable;
-
-import java.io.IOException;
 
 /**
  * Base class for {@link org.springframework.context.ApplicationContext}
@@ -62,30 +62,17 @@ import java.io.IOException;
  * @see FileSystemXmlApplicationContext
  * @see org.springframework.context.annotation.AnnotationConfigApplicationContext
  */
-@SuppressWarnings("JavadocReference")
 public abstract class AbstractRefreshableApplicationContext extends AbstractApplicationContext {
 
-    /**
-     * 是否允许覆盖同名称的不同定义的对象
-     */
 	@Nullable
 	private Boolean allowBeanDefinitionOverriding;
-    /**
-     * 是否允许 Bean 之间存在循环依赖
-     */
+
 	@Nullable
 	private Boolean allowCircularReferences;
 
-	/**
-     * Bean factory for this context.
-     *
-     * 当前 Context 所拥有的 BeanFactory 对象
-     */
+	/** Bean factory for this context. */
 	@Nullable
-	private DefaultListableBeanFactory beanFactory;
-
-	/** Synchronization monitor for the internal BeanFactory. */
-	private final Object beanFactoryMonitor = new Object();
+	private volatile DefaultListableBeanFactory beanFactory;
 
 
 	/**
@@ -132,70 +119,56 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 	 */
 	@Override
 	protected final void refreshBeanFactory() throws BeansException {
-	    // 若已有 BeanFactory ，销毁它的 Bean 们，并销毁 BeanFactory
 		if (hasBeanFactory()) {
 			destroyBeans();
 			closeBeanFactory();
 		}
 		try {
-		    // 创建 BeanFactory 对象
 			DefaultListableBeanFactory beanFactory = createBeanFactory();
-			// 指定序列化编号
 			beanFactory.setSerializationId(getId());
-			// 定制 BeanFactory 设置相关属性
 			customizeBeanFactory(beanFactory);
-			// 加载 BeanDefinition 们
 			loadBeanDefinitions(beanFactory);
-			// 设置 Context 的 BeanFactory
-			synchronized (this.beanFactoryMonitor) {
-				this.beanFactory = beanFactory;
-			}
-		} catch (IOException ex) {
+			this.beanFactory = beanFactory;
+		}
+		catch (IOException ex) {
 			throw new ApplicationContextException("I/O error parsing bean definition source for " + getDisplayName(), ex);
 		}
 	}
 
 	@Override
 	protected void cancelRefresh(BeansException ex) {
-		synchronized (this.beanFactoryMonitor) {
-			if (this.beanFactory != null) {
-				this.beanFactory.setSerializationId(null);
-			}
+		DefaultListableBeanFactory beanFactory = this.beanFactory;
+		if (beanFactory != null) {
+			beanFactory.setSerializationId(null);
 		}
 		super.cancelRefresh(ex);
 	}
 
 	@Override
 	protected final void closeBeanFactory() {
-		synchronized (this.beanFactoryMonitor) {
-			if (this.beanFactory != null) {
-				this.beanFactory.setSerializationId(null);
-				this.beanFactory = null;
-			}
+		DefaultListableBeanFactory beanFactory = this.beanFactory;
+		if (beanFactory != null) {
+			beanFactory.setSerializationId(null);
+			this.beanFactory = null;
 		}
 	}
 
 	/**
-     * 当前是否已经有一个 {@link #beanFactory} ，即非空
-     *
 	 * Determine whether this context currently holds a bean factory,
 	 * i.e. has been refreshed at least once and not been closed yet.
 	 */
 	protected final boolean hasBeanFactory() {
-		synchronized (this.beanFactoryMonitor) {
-			return (this.beanFactory != null);
-		}
+		return (this.beanFactory != null);
 	}
 
 	@Override
 	public final ConfigurableListableBeanFactory getBeanFactory() {
-		synchronized (this.beanFactoryMonitor) {
-			if (this.beanFactory == null) {
-				throw new IllegalStateException("BeanFactory not initialized or already closed - " +
-						"call 'refresh' before accessing beans via the ApplicationContext");
-			}
-			return this.beanFactory;
+		DefaultListableBeanFactory beanFactory = this.beanFactory;
+		if (beanFactory == null) {
+			throw new IllegalStateException("BeanFactory not initialized or already closed - " +
+					"call 'refresh' before accessing beans via the ApplicationContext");
 		}
+		return beanFactory;
 	}
 
 	/**
@@ -239,11 +212,9 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 	 * @see DefaultListableBeanFactory#setAllowEagerClassLoading
 	 */
 	protected void customizeBeanFactory(DefaultListableBeanFactory beanFactory) {
-	    // 是否允许覆盖同名称的不同定义的对象
 		if (this.allowBeanDefinitionOverriding != null) {
 			beanFactory.setAllowBeanDefinitionOverriding(this.allowBeanDefinitionOverriding);
 		}
-		// 是否允许 Bean 之间存在循环依赖
 		if (this.allowCircularReferences != null) {
 			beanFactory.setAllowCircularReferences(this.allowCircularReferences);
 		}

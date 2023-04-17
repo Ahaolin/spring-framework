@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayDeque;
 import java.util.Deque;
+
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.PageContext;
 
@@ -95,6 +96,18 @@ public class TagWriter {
 		}
 		this.writer.append(" ").append(attributeName).append("=\"")
 				.append(attributeValue).append("\"");
+	}
+
+	/**
+	 * Variant of {@link #writeAttribute(String, String)} for writing empty HTML
+	 * attributes without a value such as {@code required}.
+	 * @since 5.3.14
+	 */
+	public void writeAttribute(String attributeName) throws JspException {
+		if (currentState().isBlockTag()) {
+			throw new IllegalStateException("Cannot write attributes after opening tag is closed.");
+		}
+		this.writer.append(" ").append(attributeName);
 	}
 
 	/**

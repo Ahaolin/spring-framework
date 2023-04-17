@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,22 +16,29 @@
 
 package org.springframework.beans.factory.support;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import org.springframework.beans.BeanInstantiationException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.cglib.core.ClassGenerator;
-import org.springframework.cglib.core.DefaultGeneratorStrategy;
+import org.springframework.cglib.core.ClassLoaderAwareGeneratorStrategy;
 import org.springframework.cglib.core.SpringNamingPolicy;
-import org.springframework.cglib.proxy.*;
+import org.springframework.cglib.proxy.Callback;
+import org.springframework.cglib.proxy.CallbackFilter;
+import org.springframework.cglib.proxy.Enhancer;
+import org.springframework.cglib.proxy.Factory;
+import org.springframework.cglib.proxy.MethodInterceptor;
+import org.springframework.cglib.proxy.MethodProxy;
+import org.springframework.cglib.proxy.NoOp;
+import org.springframework.core.ResolvableType;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 
 /**
  * Default object instantiation strategy for use in BeanFactories.
@@ -71,11 +78,13 @@ public class CglibSubclassingInstantiationStrategy extends SimpleInstantiationSt
 	}
 
 	@Override
-	protected Object instantiateWithMethodInjection(RootBeanDefinition bd, @Nullable String beanName, BeanFactory owner, @Nullable Constructor<?> ctor, Object... args) {
+	protected Object instantiateWithMethodInjection(RootBeanDefinition bd, @Nullable String beanName, BeanFactory owner,
+			@Nullable Constructor<?> ctor, Object... args) {
+
 		// Must generate CGLIB subclass...
-        // 通过CGLIB生成一个子类对象
 		return new CglibSubclassCreator(bd, owner).instantiate(ctor, args);
 	}
+
 
 	/**
 	 * An inner class created for historical reasons to avoid external CGLIB dependency
@@ -105,25 +114,23 @@ public class CglibSubclassingInstantiationStrategy extends SimpleInstantiationSt
 		 * @return new instance of the dynamically generated subclass
 		 */
 		public Object instantiate(@Nullable Constructor<?> ctor, Object... args) {
-            // 通过 Cglib 创建一个代理类
 			Class<?> subclass = createEnhancedSubclass(this.beanDefinition);
 			Object instance;
-            // 没有构造器，通过 BeanUtils 使用默认构造器创建一个bean实例
 			if (ctor == null) {
 				instance = BeanUtils.instantiateClass(subclass);
-			} else {
+			}
+			else {
 				try {
-                    // 获取代理类对应的构造器对象，并实例化 bean
 					Constructor<?> enhancedSubclassConstructor = subclass.getConstructor(ctor.getParameterTypes());
 					instance = enhancedSubclassConstructor.newInstance(args);
-				} catch (Exception ex) {
+				}
+				catch (Exception ex) {
 					throw new BeanInstantiationException(this.beanDefinition.getBeanClass(),
 							"Failed to invoke constructor for CGLIB enhanced subclass [" + subclass.getName() + "]", ex);
 				}
 			}
 			// SPR-10785: set callbacks directly on the instance instead of in the
 			// enhanced class (via the Enhancer) in order to avoid memory leaks.
-            // 为了避免 memory leaks 异常，直接在 bean 实例上设置回调对象
 			Factory factory = (Factory) instance;
 			factory.setCallbacks(new Callback[] {NoOp.INSTANCE,
 					new LookupOverrideMethodInterceptor(this.beanDefinition, this.owner),
@@ -136,18 +143,13 @@ public class CglibSubclassingInstantiationStrategy extends SimpleInstantiationSt
 		 * definition, using CGLIB.
 		 */
 		private Class<?> createEnhancedSubclass(RootBeanDefinition beanDefinition) {
-		    // 创建 Enhancer 对象
 			Enhancer enhancer = new Enhancer();
-			// 设置 Bean 类
 			enhancer.setSuperclass(beanDefinition.getBeanClass());
-			// 设置 Spring 的命名策略
 			enhancer.setNamingPolicy(SpringNamingPolicy.INSTANCE);
-			// 设置生成策略
 			if (this.owner instanceof ConfigurableBeanFactory) {
 				ClassLoader cl = ((ConfigurableBeanFactory) this.owner).getBeanClassLoader();
 				enhancer.setStrategy(new ClassLoaderAwareGeneratorStrategy(cl));
 			}
-			// 过滤，自定义逻辑来指定调用的callback下标
 			enhancer.setCallbackFilter(new MethodOverrideCallbackFilter(beanDefinition));
 			enhancer.setCallbackTypes(CALLBACK_TYPES);
 			return enhancer.createClass();
@@ -173,61 +175,14 @@ public class CglibSubclassingInstantiationStrategy extends SimpleInstantiationSt
 		}
 
 		@Override
-		public boolean equals(Object other) {
-			return (getClass() == other.getClass() &&
+		public boolean equals(@Nullable Object other) {
+			return (other != null && getClass() == other.getClass() &&
 					this.beanDefinition.equals(((CglibIdentitySupport) other).beanDefinition));
 		}
 
 		@Override
 		public int hashCode() {
 			return this.beanDefinition.hashCode();
-		}
-	}
-
-
-	/**
-	 * CGLIB GeneratorStrategy variant which exposes the application ClassLoader
-	 * as thread context ClassLoader for the time of class generation
-	 * (in order for ASM to pick it up when doing common superclass resolution).
-	 */
-	private static class ClassLoaderAwareGeneratorStrategy extends DefaultGeneratorStrategy {
-
-		@Nullable
-		private final ClassLoader classLoader;
-
-		public ClassLoaderAwareGeneratorStrategy(@Nullable ClassLoader classLoader) {
-			this.classLoader = classLoader;
-		}
-
-		@Override
-		public byte[] generate(ClassGenerator cg) throws Exception {
-			if (this.classLoader == null) {
-				return super.generate(cg);
-			}
-
-			Thread currentThread = Thread.currentThread();
-			ClassLoader threadContextClassLoader;
-			try {
-				threadContextClassLoader = currentThread.getContextClassLoader();
-			}
-			catch (Throwable ex) {
-				// Cannot access thread context ClassLoader - falling back...
-				return super.generate(cg);
-			}
-
-			boolean overrideClassLoader = !this.classLoader.equals(threadContextClassLoader);
-			if (overrideClassLoader) {
-				currentThread.setContextClassLoader(this.classLoader);
-			}
-			try {
-				return super.generate(cg);
-			}
-			finally {
-				if (overrideClassLoader) {
-					// Reset original thread context ClassLoader.
-					currentThread.setContextClassLoader(threadContextClassLoader);
-				}
-			}
 		}
 	}
 
@@ -247,19 +202,20 @@ public class CglibSubclassingInstantiationStrategy extends SimpleInstantiationSt
 		public int accept(Method method) {
 			MethodOverride methodOverride = getBeanDefinition().getMethodOverrides().getOverride(method);
 			if (logger.isTraceEnabled()) {
-				logger.trace("Override for '" + method.getName() + "' is [" + methodOverride + "]");
+				logger.trace("MethodOverride for " + method + ": " + methodOverride);
 			}
 			if (methodOverride == null) {
 				return PASSTHROUGH;
-			} else if (methodOverride instanceof LookupOverride) {
+			}
+			else if (methodOverride instanceof LookupOverride) {
 				return LOOKUP_OVERRIDE;
-			} else if (methodOverride instanceof ReplaceOverride) {
+			}
+			else if (methodOverride instanceof ReplaceOverride) {
 				return METHOD_REPLACER;
 			}
 			throw new UnsupportedOperationException("Unexpected MethodOverride subclass: " +
 					methodOverride.getClass().getName());
 		}
-
 	}
 
 
@@ -279,21 +235,24 @@ public class CglibSubclassingInstantiationStrategy extends SimpleInstantiationSt
 		@Override
 		public Object intercept(Object obj, Method method, Object[] args, MethodProxy mp) throws Throwable {
 			// Cast is safe, as CallbackFilter filters are used selectively.
-			// 获得 method 对应的 LookupOverride 对象
-            LookupOverride lo = (LookupOverride) getBeanDefinition().getMethodOverrides().getOverride(method);
+			LookupOverride lo = (LookupOverride) getBeanDefinition().getMethodOverrides().getOverride(method);
 			Assert.state(lo != null, "LookupOverride not found");
-			// 获得参数
 			Object[] argsToUse = (args.length > 0 ? args : null);  // if no-arg, don't insist on args at all
-			// 获得 Bean
-            if (StringUtils.hasText(lo.getBeanName())) { // Bean 的名字
-				return (argsToUse != null ? this.owner.getBean(lo.getBeanName(), argsToUse) :
+			if (StringUtils.hasText(lo.getBeanName())) {
+				Object bean = (argsToUse != null ? this.owner.getBean(lo.getBeanName(), argsToUse) :
 						this.owner.getBean(lo.getBeanName()));
-			} else { // Bean 的类型
-				return (argsToUse != null ? this.owner.getBean(method.getReturnType(), argsToUse) :
-						this.owner.getBean(method.getReturnType()));
+				// Detect package-protected NullBean instance through equals(null) check
+				return (bean.equals(null) ? null : bean);
+			}
+			else {
+				// Find target bean matching the (potentially generic) method return type
+				ResolvableType genericReturnType = ResolvableType.forMethodReturnType(method);
+				return (argsToUse != null ? this.owner.getBeanProvider(genericReturnType).getObject(argsToUse) :
+						this.owner.getBeanProvider(genericReturnType).getObject());
 			}
 		}
 	}
+
 
 	/**
 	 * CGLIB MethodInterceptor to override methods, replacing them with a call
@@ -310,13 +269,10 @@ public class CglibSubclassingInstantiationStrategy extends SimpleInstantiationSt
 
 		@Override
 		public Object intercept(Object obj, Method method, Object[] args, MethodProxy mp) throws Throwable {
-            // 获得 method 对应的 LookupOverride 对象
-            ReplaceOverride ro = (ReplaceOverride) getBeanDefinition().getMethodOverrides().getOverride(method);
+			ReplaceOverride ro = (ReplaceOverride) getBeanDefinition().getMethodOverrides().getOverride(method);
 			Assert.state(ro != null, "ReplaceOverride not found");
 			// TODO could cache if a singleton for minor performance optimization
-			// 获得 MethodReplacer 对象
-            MethodReplacer mr = this.owner.getBean(ro.getMethodReplacerBeanName(), MethodReplacer.class);
-            // 执行替换
+			MethodReplacer mr = this.owner.getBean(ro.getMethodReplacerBeanName(), MethodReplacer.class);
 			return mr.reimplement(obj, method, args);
 		}
 	}

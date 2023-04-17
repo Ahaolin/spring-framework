@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,6 +15,11 @@
  */
 
 package org.springframework.context.support;
+
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
@@ -28,16 +33,13 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.io.ProtocolResolver;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.io.support.ResourcePatternResolver;
+import org.springframework.core.metrics.ApplicationStartup;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
-
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
 
 /**
  * Generic ApplicationContext implementation that holds a single internal
@@ -85,13 +87,13 @@ import java.util.function.Supplier;
  *
  * @author Juergen Hoeller
  * @author Chris Beams
+ * @author Sam Brannen
  * @since 1.1.2
  * @see #registerBeanDefinition
  * @see #refresh()
  * @see org.springframework.beans.factory.xml.XmlBeanDefinitionReader
  * @see org.springframework.beans.factory.support.PropertiesBeanDefinitionReader
  */
-@SuppressWarnings("JavadocReference")
 public class GenericApplicationContext extends AbstractApplicationContext implements BeanDefinitionRegistry {
 
 	private final DefaultListableBeanFactory beanFactory;
@@ -159,6 +161,12 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
 		this.beanFactory.setParentBeanFactory(getInternalParentBeanFactory());
 	}
 
+	@Override
+	public void setApplicationStartup(ApplicationStartup applicationStartup) {
+		super.setApplicationStartup(applicationStartup);
+		this.beanFactory.setApplicationStartup(applicationStartup);
+	}
+
 	/**
 	 * Set whether it should be allowed to override bean definitions by registering
 	 * a different definition with the same name, automatically replacing the former.
@@ -210,13 +218,23 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
 	//---------------------------------------------------------------------
 
 	/**
-	 * This implementation delegates to this context's ResourceLoader if set,
-	 * falling back to the default superclass behavior else.
-	 * @see #setResourceLoader
+	 * This implementation delegates to this context's {@code ResourceLoader} if set,
+	 * falling back to the default superclass behavior otherwise.
+	 * <p>As of Spring Framework 5.3.22, this method also honors registered
+	 * {@linkplain #getProtocolResolvers() protocol resolvers} when a custom
+	 * {@code ResourceLoader} has been set.
+	 * @see #setResourceLoader(ResourceLoader)
+	 * @see #addProtocolResolver(ProtocolResolver)
 	 */
 	@Override
 	public Resource getResource(String location) {
 		if (this.resourceLoader != null) {
+			for (ProtocolResolver protocolResolver : getProtocolResolvers()) {
+				Resource resource = protocolResolver.resolve(location, this);
+				if (resource != null) {
+					return resource;
+				}
+			}
 			return this.resourceLoader.getResource(location);
 		}
 		return super.getResource(location);
@@ -225,7 +243,7 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
 	/**
 	 * This implementation delegates to this context's ResourceLoader if it
 	 * implements the ResourcePatternResolver interface, falling back to the
-	 * default superclass behavior else.
+	 * default superclass behavior otherwise.
 	 * @see #setResourceLoader
 	 */
 	@Override
@@ -360,9 +378,42 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
 	//---------------------------------------------------------------------
 
 	/**
+	 * Register a bean from the given bean class, optionally providing explicit
+	 * constructor arguments for consideration in the autowiring process.
+	 * @param beanClass the class of the bean
+	 * @param constructorArgs custom argument values to be fed into Spring's
+	 * constructor resolution algorithm, resolving either all arguments or just
+	 * specific ones, with the rest to be resolved through regular autowiring
+	 * (may be {@code null} or empty)
+	 * @since 5.2 (since 5.0 on the AnnotationConfigApplicationContext subclass)
+	 */
+	public <T> void registerBean(Class<T> beanClass, Object... constructorArgs) {
+		registerBean(null, beanClass, constructorArgs);
+	}
+
+	/**
+	 * Register a bean from the given bean class, optionally providing explicit
+	 * constructor arguments for consideration in the autowiring process.
+	 * @param beanName the name of the bean (may be {@code null})
+	 * @param beanClass the class of the bean
+	 * @param constructorArgs custom argument values to be fed into Spring's
+	 * constructor resolution algorithm, resolving either all arguments or just
+	 * specific ones, with the rest to be resolved through regular autowiring
+	 * (may be {@code null} or empty)
+	 * @since 5.2 (since 5.0 on the AnnotationConfigApplicationContext subclass)
+	 */
+	public <T> void registerBean(@Nullable String beanName, Class<T> beanClass, Object... constructorArgs) {
+		registerBean(beanName, beanClass, (Supplier<T>) null,
+				bd -> {
+					for (Object arg : constructorArgs) {
+						bd.getConstructorArgumentValues().addGenericArgumentValue(arg);
+					}
+				});
+	}
+
+	/**
 	 * Register a bean from the given bean class, optionally customizing its
-	 * bean definition metadata (typically declared as a lambda expression
-	 * or method reference).
+	 * bean definition metadata (typically declared as a lambda expression).
 	 * @param beanClass the class of the bean (resolving a public constructor
 	 * to be autowired, possibly simply the default constructor)
 	 * @param customizers one or more callbacks for customizing the factory's
@@ -375,10 +426,8 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
 	}
 
 	/**
-	 * Register a bean from the given bean class, using the given supplier for
-	 * obtaining a new instance (typically declared as a lambda expression or
-	 * method reference), optionally customizing its bean definition metadata
-	 * (again typically declared as a lambda expression or method reference).
+	 * Register a bean from the given bean class, optionally customizing its
+	 * bean definition metadata (typically declared as a lambda expression).
 	 * @param beanName the name of the bean (may be {@code null})
 	 * @param beanClass the class of the bean (resolving a public constructor
 	 * to be autowired, possibly simply the default constructor)
@@ -397,7 +446,7 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
 	 * Register a bean from the given bean class, using the given supplier for
 	 * obtaining a new instance (typically declared as a lambda expression or
 	 * method reference), optionally customizing its bean definition metadata
-	 * (again typically declared as a lambda expression or method reference).
+	 * (again typically declared as a lambda expression).
 	 * @param beanClass the class of the bean
 	 * @param supplier a callback for creating an instance of the bean
 	 * @param customizers one or more callbacks for customizing the factory's
@@ -415,7 +464,7 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
 	 * Register a bean from the given bean class, using the given supplier for
 	 * obtaining a new instance (typically declared as a lambda expression or
 	 * method reference), optionally customizing its bean definition metadata
-	 * (again typically declared as a lambda expression or method reference).
+	 * (again typically declared as a lambda expression).
 	 * <p>This method can be overridden to adapt the registration mechanism for
 	 * all {@code registerBean} methods (since they all delegate to this one).
 	 * @param beanName the name of the bean (may be {@code null})

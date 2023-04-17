@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -83,8 +83,8 @@ public interface Errors {
 	 * {@code pushNestedPath(String)} call.
 	 * <p>Using the nested path stack allows to set temporary nested paths
 	 * for subobjects without having to worry about a temporary path holder.
-	 * <p>For example: current path "spouse.", pushNestedPath("child") ->
-	 * result path "spouse.child."; popNestedPath() -> "spouse." again.
+	 * <p>For example: current path "spouse.", pushNestedPath("child") &rarr;
+	 * result path "spouse.child."; popNestedPath() &rarr; "spouse." again.
 	 * @param subPath the sub path to push onto the nested path stack
 	 * @see #popNestedPath
 	 */

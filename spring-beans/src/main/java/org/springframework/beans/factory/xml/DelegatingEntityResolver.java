@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,13 +16,14 @@
 
 package org.springframework.beans.factory.xml;
 
-import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
+import java.io.IOException;
+
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import java.io.IOException;
+import org.springframework.lang.Nullable;
+import org.springframework.util.Assert;
 
 /**
  * {@link EntityResolver} implementation that delegates to a {@link BeansDtdResolver}
@@ -43,9 +44,11 @@ public class DelegatingEntityResolver implements EntityResolver {
 	/** Suffix for schema definition files. */
 	public static final String XSD_SUFFIX = ".xsd";
 
+
 	private final EntityResolver dtdResolver;
 
 	private final EntityResolver schemaResolver;
+
 
 	/**
 	 * Create a new DelegatingEntityResolver that delegates to
@@ -53,7 +56,7 @@ public class DelegatingEntityResolver implements EntityResolver {
 	 * <p>Configures the {@link PluggableSchemaResolver} with the supplied
 	 * {@link ClassLoader}.
 	 * @param classLoader the ClassLoader to use for loading
-	 * (can be {@code null}) to use the default ClassLoader)
+	 * (can be {@code null} to use the default ClassLoader)
 	 */
 	public DelegatingEntityResolver(@Nullable ClassLoader classLoader) {
 		this.dtdResolver = new BeansDtdResolver();
@@ -73,20 +76,25 @@ public class DelegatingEntityResolver implements EntityResolver {
 		this.schemaResolver = schemaResolver;
 	}
 
+
 	@Override
 	@Nullable
-	public InputSource resolveEntity(String publicId, @Nullable String systemId) throws SAXException, IOException {
+	public InputSource resolveEntity(@Nullable String publicId, @Nullable String systemId)
+			throws SAXException, IOException {
+
 		if (systemId != null) {
-		    // DTD 模式
 			if (systemId.endsWith(DTD_SUFFIX)) {
 				return this.dtdResolver.resolveEntity(publicId, systemId);
-            // XSD 模式
-			} else if (systemId.endsWith(XSD_SUFFIX)) {
+			}
+			else if (systemId.endsWith(XSD_SUFFIX)) {
 				return this.schemaResolver.resolveEntity(publicId, systemId);
 			}
 		}
+
+		// Fall back to the parser's default behavior.
 		return null;
 	}
+
 
 	@Override
 	public String toString() {

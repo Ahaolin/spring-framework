@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,16 +16,14 @@
 
 package org.springframework.aop.aspectj;
 
-import org.springframework.aop.MethodBeforeAdvice;
-import org.springframework.lang.Nullable;
-
 import java.io.Serializable;
 import java.lang.reflect.Method;
 
+import org.springframework.aop.MethodBeforeAdvice;
+import org.springframework.lang.Nullable;
+
 /**
  * Spring AOP advice that wraps an AspectJ before method.
- *
- * 前置增强的 Advice 类
  *
  * @author Rod Johnson
  * @author Adrian Colyer
@@ -36,8 +34,10 @@ public class AspectJMethodBeforeAdvice extends AbstractAspectJAdvice implements 
 
 	public AspectJMethodBeforeAdvice(
 			Method aspectJBeforeAdviceMethod, AspectJExpressionPointcut pointcut, AspectInstanceFactory aif) {
+
 		super(aspectJBeforeAdviceMethod, pointcut, aif);
 	}
+
 
 	@Override
 	public void before(Method method, Object[] args, @Nullable Object target) throws Throwable {

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,16 +16,16 @@
 
 package org.springframework.web.servlet.theme;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.ThemeResolver;
 import org.springframework.web.util.CookieGenerator;
 import org.springframework.web.util.WebUtils;
-
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * {@link ThemeResolver} implementation that uses a cookie sent back to the user
@@ -123,7 +123,8 @@ public class CookieThemeResolver extends CookieGenerator implements ThemeResolve
 			// Set request attribute and add cookie.
 			request.setAttribute(THEME_REQUEST_ATTRIBUTE_NAME, themeName);
 			addCookie(response, themeName);
-		} else {
+		}
+		else {
 			// Set request attribute to fallback theme and remove cookie.
 			request.setAttribute(THEME_REQUEST_ATTRIBUTE_NAME, getDefaultThemeName());
 			removeCookie(response);

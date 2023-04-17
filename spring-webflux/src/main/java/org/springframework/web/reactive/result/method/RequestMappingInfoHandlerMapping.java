@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,19 @@
 
 package org.springframework.web.reactive.result.method;
 
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import reactor.core.publisher.Mono;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.InvalidMediaTypeException;
@@ -23,22 +36,26 @@ import org.springframework.http.MediaType;
 import org.springframework.http.server.PathContainer;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.reactive.HandlerMapping;
 import org.springframework.web.reactive.result.condition.NameValueExpression;
-import org.springframework.web.server.*;
+import org.springframework.web.reactive.result.condition.ProducesRequestCondition;
+import org.springframework.web.server.MethodNotAllowedException;
+import org.springframework.web.server.NotAcceptableStatusException;
+import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.ServerWebInputException;
+import org.springframework.web.server.UnsupportedMediaTypeStatusException;
 import org.springframework.web.util.pattern.PathPattern;
-
-import java.lang.reflect.Method;
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Abstract base class for classes for which {@link RequestMappingInfo} defines
  * the mapping between a request and a handler method.
  *
  * @author Rossen Stoyanchev
+ * @author Sam Brannen
  * @since 5.0
  */
 public abstract class RequestMappingInfoHandlerMapping extends AbstractHandlerMethodMapping<RequestMappingInfo> {
@@ -48,12 +65,18 @@ public abstract class RequestMappingInfoHandlerMapping extends AbstractHandlerMe
 	static {
 		try {
 			HTTP_OPTIONS_HANDLE_METHOD = HttpOptionsHandler.class.getMethod("handle");
-		} catch (NoSuchMethodException ex) {
+		}
+		catch (NoSuchMethodException ex) {
 			// Should never happen
 			throw new IllegalStateException("No handler for HTTP OPTIONS", ex);
 		}
 	}
 
+
+	@Override
+	protected Set<String> getDirectPaths(RequestMappingInfo info) {
+		return info.getDirectPaths();
+	}
 
 	/**
 	 * Check if the given RequestMappingInfo matches the current request and
@@ -72,6 +95,13 @@ public abstract class RequestMappingInfoHandlerMapping extends AbstractHandlerMe
 	@Override
 	protected Comparator<RequestMappingInfo> getMappingComparator(final ServerWebExchange exchange) {
 		return (info1, info2) -> info1.compareTo(info2, exchange);
+	}
+
+	@Override
+	public Mono<HandlerMethod> getHandlerInternal(ServerWebExchange exchange) {
+		exchange.getAttributes().remove(HandlerMapping.PRODUCIBLE_MEDIA_TYPES_ATTRIBUTE);
+		return super.getHandlerInternal(exchange)
+				.doOnTerminate(() -> ProducesRequestCondition.clearMediaTypesAttribute(exchange));
 	}
 
 	/**
@@ -112,9 +142,12 @@ public abstract class RequestMappingInfoHandlerMapping extends AbstractHandlerMe
 		exchange.getAttributes().put(URI_TEMPLATE_VARIABLES_ATTRIBUTE, uriVariables);
 		exchange.getAttributes().put(MATRIX_VARIABLES_ATTRIBUTE, matrixVariables);
 
-		if (!info.getProducesCondition().getProducibleMediaTypes().isEmpty()) {
-			Set<MediaType> mediaTypes = info.getProducesCondition().getProducibleMediaTypes();
-			exchange.getAttributes().put(PRODUCIBLE_MEDIA_TYPES_ATTRIBUTE, mediaTypes);
+		ProducesRequestCondition producesCondition = info.getProducesCondition();
+		if (!producesCondition.isEmpty()) {
+			Set<MediaType> mediaTypes = producesCondition.getProducibleMediaTypes();
+			if (!mediaTypes.isEmpty()) {
+				exchange.getAttributes().put(PRODUCIBLE_MEDIA_TYPES_ATTRIBUTE, mediaTypes);
+			}
 		}
 	}
 
@@ -133,8 +166,11 @@ public abstract class RequestMappingInfoHandlerMapping extends AbstractHandlerMe
 	protected HandlerMethod handleNoMatch(Set<RequestMappingInfo> infos,
 			ServerWebExchange exchange) throws Exception {
 
-		PartialMatchHelper helper = new PartialMatchHelper(infos, exchange);
+		if (CollectionUtils.isEmpty(infos)) {
+			return null;
+		}
 
+		PartialMatchHelper helper = new PartialMatchHelper(infos, exchange);
 		if (helper.isEmpty()) {
 			return null;
 		}
@@ -145,7 +181,8 @@ public abstract class RequestMappingInfoHandlerMapping extends AbstractHandlerMe
 			String httpMethod = request.getMethodValue();
 			Set<HttpMethod> methods = helper.getAllowedMethods();
 			if (HttpMethod.OPTIONS.matches(httpMethod)) {
-				HttpOptionsHandler handler = new HttpOptionsHandler(methods);
+				Set<MediaType> mediaTypes = helper.getConsumablePatchMediaTypes();
+				HttpOptionsHandler handler = new HttpOptionsHandler(methods, mediaTypes);
 				return new HandlerMethod(handler, HTTP_OPTIONS_HANDLE_METHOD);
 			}
 			throw new MethodNotAllowedException(httpMethod, methods);
@@ -160,7 +197,7 @@ public abstract class RequestMappingInfoHandlerMapping extends AbstractHandlerMe
 			catch (InvalidMediaTypeException ex) {
 				throw new UnsupportedMediaTypeStatusException(ex.getMessage());
 			}
-			throw new UnsupportedMediaTypeStatusException(contentType, new ArrayList<>(mediaTypes));
+			throw new UnsupportedMediaTypeStatusException(contentType, new ArrayList<>(mediaTypes), exchange.getRequest().getMethod());
 		}
 
 		if (helper.hasProducesMismatch()) {
@@ -185,17 +222,16 @@ public abstract class RequestMappingInfoHandlerMapping extends AbstractHandlerMe
 
 		private final List<PartialMatch> partialMatches = new ArrayList<>();
 
-
-		public PartialMatchHelper(Set<RequestMappingInfo> infos, ServerWebExchange exchange) {
-			this.partialMatches.addAll(infos.stream().
-					filter(info -> info.getPatternsCondition().getMatchingCondition(exchange) != null).
-					map(info -> new PartialMatch(info, exchange)).
-					collect(Collectors.toList()));
+		PartialMatchHelper(Set<RequestMappingInfo> infos, ServerWebExchange exchange) {
+			for (RequestMappingInfo info : infos) {
+				if (info.getPatternsCondition().getMatchingCondition(exchange) != null) {
+					this.partialMatches.add(new PartialMatch(info, exchange));
+				}
+			}
 		}
 
-
 		/**
-		 * Whether there any partial matches.
+		 * Whether there are any partial matches.
 		 */
 		public boolean isEmpty() {
 			return this.partialMatches.isEmpty();
@@ -273,6 +309,22 @@ public abstract class RequestMappingInfoHandlerMapping extends AbstractHandlerMe
 					collect(Collectors.toList());
 		}
 
+		/**
+		 * Return declared "consumable" types but only among those that have
+		 * PATCH specified, or that have no methods at all.
+		 */
+		public Set<MediaType> getConsumablePatchMediaTypes() {
+			Set<MediaType> result = new LinkedHashSet<>();
+			for (PartialMatch match : this.partialMatches) {
+				Set<RequestMethod> methods = match.getInfo().getMethodsCondition().getMethods();
+				if (methods.isEmpty() || methods.contains(RequestMethod.PATCH)) {
+					result.addAll(match.getInfo().getConsumesCondition().getConsumableMediaTypes());
+				}
+			}
+			return result;
+		}
+
+
 
 		/**
 		 * Container for a RequestMappingInfo that matches the URL path at least.
@@ -339,8 +391,9 @@ public abstract class RequestMappingInfoHandlerMapping extends AbstractHandlerMe
 		private final HttpHeaders headers = new HttpHeaders();
 
 
-		public HttpOptionsHandler(Set<HttpMethod> declaredMethods) {
+		public HttpOptionsHandler(Set<HttpMethod> declaredMethods, Set<MediaType> acceptPatch) {
 			this.headers.setAllow(initAllowedHttpMethods(declaredMethods));
+			this.headers.setAcceptPatch(new ArrayList<>(acceptPatch));
 		}
 
 		private static Set<HttpMethod> initAllowedHttpMethods(Set<HttpMethod> declaredMethods) {

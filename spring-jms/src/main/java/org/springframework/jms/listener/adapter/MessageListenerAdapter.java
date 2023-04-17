@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,7 @@
 package org.springframework.jms.listener.adapter;
 
 import java.lang.reflect.InvocationTargetException;
+
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
@@ -35,7 +36,7 @@ import org.springframework.util.ObjectUtils;
  * Message listener adapter that delegates the handling of messages to target
  * listener methods via reflection, with flexible message type conversion.
  * Allows listener methods to operate on message content types, completely
- * independent from the JMS API.
+ * independent of the JMS API.
  *
  * <p>By default, the content of incoming JMS messages gets extracted before
  * being passed into the target listener method, to let the target method
@@ -88,7 +89,7 @@ import org.springframework.util.ObjectUtils;
  * {@link javax.jms.TextMessage TextMessages}. Notice also how the
  * name of the {@code Message} handling method is different from the
  * {@link #ORIGINAL_DEFAULT_LISTENER_METHOD original} (this will have to
- * be configured in the attandant bean definition). Again, no {@code Message}
+ * be configured in the attendant bean definition). Again, no {@code Message}
  * will be sent back as the method returns {@code void}.
  *
  * <pre class="code">public interface TextMessageContentDelegate {

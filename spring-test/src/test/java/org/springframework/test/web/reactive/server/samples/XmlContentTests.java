@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,12 +20,13 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -38,7 +39,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.startsWith;
 
 /**
  * Samples of tests using {@link WebTestClient} with XML content.
@@ -46,7 +47,7 @@ import static org.hamcrest.Matchers.*;
  * @author Eric Deandrea
  * @since 5.1
  */
-public class XmlContentTests {
+class XmlContentTests {
 
 	private static final String persons_XML =
 			"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
@@ -61,7 +62,7 @@ public class XmlContentTests {
 
 
 	@Test
-	public void xmlContent() {
+	void xmlContent() {
 		this.client.get().uri("/persons")
 				.accept(MediaType.APPLICATION_XML)
 				.exchange()
@@ -70,7 +71,7 @@ public class XmlContentTests {
 	}
 
 	@Test
-	public void xpathIsEqualTo() {
+	void xpathIsEqualTo() {
 		this.client.get().uri("/persons")
 				.accept(MediaType.APPLICATION_XML)
 				.exchange()
@@ -86,7 +87,7 @@ public class XmlContentTests {
 	}
 
 	@Test
-	public void xpathMatches() {
+	void xpathMatches() {
 		this.client.get().uri("/persons")
 				.accept(MediaType.APPLICATION_XML)
 				.exchange()
@@ -96,7 +97,7 @@ public class XmlContentTests {
 	}
 
 	@Test
-	public void xpathContainsSubstringViaRegex() {
+	void xpathContainsSubstringViaRegex() {
 		this.client.get().uri("/persons/John")
 				.accept(MediaType.APPLICATION_XML)
 				.exchange()
@@ -106,15 +107,14 @@ public class XmlContentTests {
 	}
 
 	@Test
-	public void postXmlContent() {
-
+	void postXmlContent() {
 		String content =
 				"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>" +
 				"<person><name>John</name></person>";
 
 		this.client.post().uri("/persons")
 				.contentType(MediaType.APPLICATION_XML)
-				.syncBody(content)
+				.bodyValue(content)
 				.exchange()
 				.expectStatus().isCreated()
 				.expectHeader().valueEquals(HttpHeaders.LOCATION, "/persons/John")

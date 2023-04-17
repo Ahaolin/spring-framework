@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,7 +33,7 @@ import org.springframework.lang.Nullable;
 public interface MessageListenerContainer extends SmartLifecycle {
 
 	/**
-	 * Setup the message listener to use. Throws an {@link IllegalArgumentException}
+	 * Set up the message listener to use. Throws an {@link IllegalArgumentException}
 	 * if that message listener type is not supported.
 	 */
 	void setupMessageListener(Object messageListener);

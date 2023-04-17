@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,7 +23,8 @@ import org.springframework.web.servlet.LocaleResolver;
 
 /**
  * Abstract base class for {@link LocaleResolver} implementations.
- * Provides support for a default locale.
+ *
+ * <p>Provides support for a {@linkplain #setDefaultLocale(Locale) default locale}.
  *
  * @author Juergen Hoeller
  * @since 1.2.9
@@ -36,14 +37,16 @@ public abstract class AbstractLocaleResolver implements LocaleResolver {
 
 
 	/**
-	 * Set a default Locale that this resolver will return if no other locale found.
+	 * Set a default {@link Locale} that this resolver will return if no other
+	 * locale is found.
 	 */
 	public void setDefaultLocale(@Nullable Locale defaultLocale) {
 		this.defaultLocale = defaultLocale;
 	}
 
 	/**
-	 * Return the default Locale that this resolver is supposed to fall back to, if any.
+	 * Get the default {@link Locale} that this resolver is supposed to fall back
+	 * to, if any.
 	 */
 	@Nullable
 	protected Locale getDefaultLocale() {

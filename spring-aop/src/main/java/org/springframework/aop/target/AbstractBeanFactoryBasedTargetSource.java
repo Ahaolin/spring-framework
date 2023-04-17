@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -191,9 +191,9 @@ public abstract class AbstractBeanFactoryBasedTargetSource implements TargetSour
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(getClass().getSimpleName());
-		sb.append(" for target bean '").append(this.targetBeanName).append("'");
+		sb.append(" for target bean '").append(this.targetBeanName).append('\'');
 		if (this.targetClass != null) {
-			sb.append(" of type [").append(this.targetClass.getName()).append("]");
+			sb.append(" of type [").append(this.targetClass.getName()).append(']');
 		}
 		return sb.toString();
 	}

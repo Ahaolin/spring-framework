@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +19,7 @@ package org.springframework.web.socket.server.standard;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
 import javax.websocket.server.ServerEndpoint;
 import javax.websocket.server.ServerEndpointConfig.Configurator;
 
@@ -117,7 +118,7 @@ public class SpringConfigurator extends Configurator {
 				beanNamesByType.put(endpointClass, NO_VALUE);
 				if (names.length > 1) {
 					throw new IllegalStateException("Found multiple @ServerEndpoint's of type [" +
-							endpointClass.getName() + "]: bean names " + Arrays.asList(names));
+							endpointClass.getName() + "]: bean names " + Arrays.toString(names));
 				}
 			}
 		}

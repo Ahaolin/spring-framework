@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,23 +16,18 @@
 
 package org.springframework.aop.interceptor;
 
+import java.io.Serializable;
+
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+
 import org.springframework.aop.Advisor;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.core.NamedThreadLocal;
 import org.springframework.core.PriorityOrdered;
-
-import java.io.Serializable;
+import org.springframework.lang.Nullable;
 
 /**
- * 暴露调用( Invocation )拦截器，通过 ThreadLocal 实现。
- *
- * @see #INSTANCE 变量
- * @see #invoke(MethodInvocation) 方法
- *
- * 通过 ExposeInvocationInterceptor 拦截器，在调用 {@link #currentInvocation()} 方法，可以获得调用信息( Invocation )。
- *
  * Interceptor that exposes the current {@link org.aopalliance.intercept.MethodInvocation}
  * as a thread-local object. We occasionally need to do this; for example, when a pointcut
  * (e.g. an AspectJ expression pointcut) needs to know the full invocation context.
@@ -49,32 +44,23 @@ import java.io.Serializable;
 @SuppressWarnings("serial")
 public final class ExposeInvocationInterceptor implements MethodInterceptor, PriorityOrdered, Serializable {
 
-	/**
-     * Singleton instance of this class.
-     *
-     * Interceptor 单例对象
-     */
+	/** Singleton instance of this class. */
 	public static final ExposeInvocationInterceptor INSTANCE = new ExposeInvocationInterceptor();
 
 	/**
-     * Advisor 单例对象
-     *
 	 * Singleton advisor for this class. Use in preference to INSTANCE when using
 	 * Spring AOP, as it prevents the need to create a new Advisor to wrap the instance.
 	 */
 	public static final Advisor ADVISOR = new DefaultPointcutAdvisor(INSTANCE) {
-
-	    @Override
+		@Override
 		public String toString() {
 			return ExposeInvocationInterceptor.class.getName() +".ADVISOR";
 		}
-
 	};
 
-    /**
-     * 线程变量，记录当前的方法调用
-     */
-	private static final ThreadLocal<MethodInvocation> invocation = new NamedThreadLocal<>("Current AOP method invocation");
+	private static final ThreadLocal<MethodInvocation> invocation =
+			new NamedThreadLocal<>("Current AOP method invocation");
+
 
 	/**
 	 * Return the AOP Alliance MethodInvocation object associated with the current invocation.
@@ -86,9 +72,11 @@ public final class ExposeInvocationInterceptor implements MethodInterceptor, Pri
 		MethodInvocation mi = invocation.get();
 		if (mi == null) {
 			throw new IllegalStateException(
-					"No MethodInvocation found: Check that an AOP invocation is in progress, and that the " +
+					"No MethodInvocation found: Check that an AOP invocation is in progress and that the " +
 					"ExposeInvocationInterceptor is upfront in the interceptor chain. Specifically, note that " +
-					"advices with order HIGHEST_PRECEDENCE will execute before ExposeInvocationInterceptor!");
+					"advices with order HIGHEST_PRECEDENCE will execute before ExposeInvocationInterceptor! " +
+					"In addition, ExposeInvocationInterceptor and ExposeInvocationInterceptor.currentInvocation() " +
+					"must be invoked from the same thread.");
 		}
 		return mi;
 	}
@@ -101,16 +89,14 @@ public final class ExposeInvocationInterceptor implements MethodInterceptor, Pri
 	}
 
 	@Override
+	@Nullable
 	public Object invoke(MethodInvocation mi) throws Throwable {
-	    // 获得老的 MethodInvocation 对象
 		MethodInvocation oldInvocation = invocation.get();
-		// 设置当前为 MethodInvocation 对象
 		invocation.set(mi);
 		try {
-		    // 执行
 			return mi.proceed();
-		} finally {
-		    // 设置回老的 MethodInvocation 对象
+		}
+		finally {
 			invocation.set(oldInvocation);
 		}
 	}

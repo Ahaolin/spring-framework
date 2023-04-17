@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,11 +25,6 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
- * <pre>
- *     对字节数组提供的数据的封装。如果通过InputStream形式访问该类型的资源，
- *     该实现会根据字节数组的数据构造一个相应的 ByteArrayInputStream。
- * </pre>
- *
  * {@link Resource} implementation for a given byte array.
  * <p>Creates a {@link ByteArrayInputStream} for the given byte array.
  *
@@ -120,7 +115,7 @@ public class ByteArrayResource extends AbstractResource {
 	 * @see java.util.Arrays#equals(byte[], byte[])
 	 */
 	@Override
-	public boolean equals(Object other) {
+	public boolean equals(@Nullable Object other) {
 		return (this == other || (other instanceof ByteArrayResource &&
 				Arrays.equals(((ByteArrayResource) other).byteArray, this.byteArray)));
 	}
@@ -131,7 +126,7 @@ public class ByteArrayResource extends AbstractResource {
 	 */
 	@Override
 	public int hashCode() {
-		return (byte[].class.hashCode() * 29 * this.byteArray.length);
+		return Arrays.hashCode(this.byteArray);
 	}
 
 }

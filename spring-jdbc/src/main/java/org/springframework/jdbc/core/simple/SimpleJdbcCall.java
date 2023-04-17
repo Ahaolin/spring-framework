@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +19,7 @@ package org.springframework.jdbc.core.simple;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Map;
+
 import javax.sql.DataSource;
 
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -27,7 +28,7 @@ import org.springframework.jdbc.core.SqlParameter;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 
 /**
- * A SimpleJdbcCall is a multi-threaded, reusable object representing a call
+ * A SimpleJdbcCall is a multithreaded, reusable object representing a call
  * to a stored procedure or a stored function. It provides meta-data processing
  * to simplify the code needed to access basic stored procedures/functions.
  * All you need to provide is the name of the procedure/function and a Map

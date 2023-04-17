@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,7 @@ package org.springframework.jndi;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+
 import javax.naming.Context;
 import javax.naming.NamingException;
 
@@ -53,7 +54,7 @@ import org.springframework.util.ClassUtils;
  * a "proxyInterface" in such a scenario, since the actual JNDI object type is not
  * known in advance.
  *
- * <p>Of course, bean classes in a Spring environment may lookup e.g. a DataSource
+ * <p>Of course, bean classes in a Spring environment may look up e.g. a DataSource
  * from JNDI themselves. This class simply enables central configuration of the
  * JNDI name, and easy switching to non-JNDI alternatives. The latter is
  * particularly convenient for test setups, reuse in standalone clients, etc.
@@ -367,6 +368,7 @@ public class JndiObjectFactoryBean extends JndiObjectLocator
 		}
 
 		@Override
+		@Nullable
 		public Object invoke(MethodInvocation invocation) throws Throwable {
 			Context ctx = (isEligible(invocation.getMethod()) ? this.jndiTemplate.getContext() : null);
 			try {

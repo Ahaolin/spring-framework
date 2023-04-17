@@ -466,7 +466,8 @@ final class MethodWriter extends MethodVisitor {
 
   /**
    * Indicates what must be computed. Must be one of {@link #COMPUTE_ALL_FRAMES}, {@link
-   * #COMPUTE_INSERTED_FRAMES}, {@link #COMPUTE_MAX_STACK_AND_LOCAL} or {@link #COMPUTE_NOTHING}.
+   * #COMPUTE_INSERTED_FRAMES}, {@link COMPUTE_MAX_STACK_AND_LOCAL_FROM_FRAMES}, {@link
+   * #COMPUTE_MAX_STACK_AND_LOCAL} or {@link #COMPUTE_NOTHING}.
    */
   private final int compute;
 
@@ -592,7 +593,7 @@ final class MethodWriter extends MethodVisitor {
       final String signature,
       final String[] exceptions,
       final int compute) {
-    super(Opcodes.ASM7);
+    super(/* latest api = */ Opcodes.ASM9);
     this.symbolTable = symbolTable;
     this.accessFlags = "<init>".equals(name) ? access | Constants.ACC_CONSTRUCTOR : access;
     this.nameIndex = symbolTable.addConstantUtf8(name);
@@ -654,37 +655,26 @@ final class MethodWriter extends MethodVisitor {
 
   @Override
   public AnnotationVisitor visitAnnotation(final String descriptor, final boolean visible) {
-    // Create a ByteVector to hold an 'annotation' JVMS structure.
-    // See https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.7.16.
-    ByteVector annotation = new ByteVector();
-    // Write type_index and reserve space for num_element_value_pairs.
-    annotation.putShort(symbolTable.addConstantUtf8(descriptor)).putShort(0);
     if (visible) {
       return lastRuntimeVisibleAnnotation =
-          new AnnotationWriter(symbolTable, annotation, lastRuntimeVisibleAnnotation);
+          AnnotationWriter.create(symbolTable, descriptor, lastRuntimeVisibleAnnotation);
     } else {
       return lastRuntimeInvisibleAnnotation =
-          new AnnotationWriter(symbolTable, annotation, lastRuntimeInvisibleAnnotation);
+          AnnotationWriter.create(symbolTable, descriptor, lastRuntimeInvisibleAnnotation);
     }
   }
 
   @Override
   public AnnotationVisitor visitTypeAnnotation(
       final int typeRef, final TypePath typePath, final String descriptor, final boolean visible) {
-    // Create a ByteVector to hold a 'type_annotation' JVMS structure.
-    // See https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.7.20.
-    ByteVector typeAnnotation = new ByteVector();
-    // Write target_type, target_info, and target_path.
-    TypeReference.putTarget(typeRef, typeAnnotation);
-    TypePath.put(typePath, typeAnnotation);
-    // Write type_index and reserve space for num_element_value_pairs.
-    typeAnnotation.putShort(symbolTable.addConstantUtf8(descriptor)).putShort(0);
     if (visible) {
       return lastRuntimeVisibleTypeAnnotation =
-          new AnnotationWriter(symbolTable, typeAnnotation, lastRuntimeVisibleTypeAnnotation);
+          AnnotationWriter.create(
+              symbolTable, typeRef, typePath, descriptor, lastRuntimeVisibleTypeAnnotation);
     } else {
       return lastRuntimeInvisibleTypeAnnotation =
-          new AnnotationWriter(symbolTable, typeAnnotation, lastRuntimeInvisibleTypeAnnotation);
+          AnnotationWriter.create(
+              symbolTable, typeRef, typePath, descriptor, lastRuntimeInvisibleTypeAnnotation);
     }
   }
 
@@ -700,27 +690,24 @@ final class MethodWriter extends MethodVisitor {
   @Override
   public AnnotationVisitor visitParameterAnnotation(
       final int parameter, final String annotationDescriptor, final boolean visible) {
-    // Create a ByteVector to hold an 'annotation' JVMS structure.
-    // See https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.7.16.
-    ByteVector annotation = new ByteVector();
-    // Write type_index and reserve space for num_element_value_pairs.
-    annotation.putShort(symbolTable.addConstantUtf8(annotationDescriptor)).putShort(0);
     if (visible) {
       if (lastRuntimeVisibleParameterAnnotations == null) {
         lastRuntimeVisibleParameterAnnotations =
             new AnnotationWriter[Type.getArgumentTypes(descriptor).length];
       }
       return lastRuntimeVisibleParameterAnnotations[parameter] =
-          new AnnotationWriter(
-              symbolTable, annotation, lastRuntimeVisibleParameterAnnotations[parameter]);
+          AnnotationWriter.create(
+              symbolTable, annotationDescriptor, lastRuntimeVisibleParameterAnnotations[parameter]);
     } else {
       if (lastRuntimeInvisibleParameterAnnotations == null) {
         lastRuntimeInvisibleParameterAnnotations =
             new AnnotationWriter[Type.getArgumentTypes(descriptor).length];
       }
       return lastRuntimeInvisibleParameterAnnotations[parameter] =
-          new AnnotationWriter(
-              symbolTable, annotation, lastRuntimeInvisibleParameterAnnotations[parameter]);
+          AnnotationWriter.create(
+              symbolTable,
+              annotationDescriptor,
+              lastRuntimeInvisibleParameterAnnotations[parameter]);
     }
   }
 
@@ -765,11 +752,10 @@ final class MethodWriter extends MethodVisitor {
         if (type == Opcodes.F_NEW) {
           currentBasicBlock.frame.setInputFrameFromApiFormat(
               symbolTable, numLocal, local, numStack, stack);
-        } else {
-          // In this case type is equal to F_INSERT by hypothesis, and currentBlock.frame contains
-          // the stack map frame at the current instruction, computed from the last F_NEW frame
-          // and the bytecode instructions in between (via calls to CurrentFrame#execute).
         }
+        // If type is not F_NEW then it is F_INSERT by hypothesis, and currentBlock.frame contains
+        // the stack map frame at the current instruction, computed from the last F_NEW frame and
+        // the bytecode instructions in between (via calls to CurrentFrame#execute).
         currentBasicBlock.frame.accept(this);
       }
     } else if (type == Opcodes.F_NEW) {
@@ -790,6 +776,9 @@ final class MethodWriter extends MethodVisitor {
       }
       visitFrameEnd();
     } else {
+      if (symbolTable.getMajorVersion() < Opcodes.V1_6) {
+        throw new IllegalArgumentException("Class versions V1_5 or less must use F_NEW frames.");
+      }
       int offsetDelta;
       if (stackMapTableEntries == null) {
         stackMapTableEntries = new ByteVector();
@@ -916,26 +905,26 @@ final class MethodWriter extends MethodVisitor {
   }
 
   @Override
-  public void visitVarInsn(final int opcode, final int var) {
+  public void visitVarInsn(final int opcode, final int varIndex) {
     lastBytecodeOffset = code.length;
     // Add the instruction to the bytecode of the method.
-    if (var < 4 && opcode != Opcodes.RET) {
+    if (varIndex < 4 && opcode != Opcodes.RET) {
       int optimizedOpcode;
       if (opcode < Opcodes.ISTORE) {
-        optimizedOpcode = Constants.ILOAD_0 + ((opcode - Opcodes.ILOAD) << 2) + var;
+        optimizedOpcode = Constants.ILOAD_0 + ((opcode - Opcodes.ILOAD) << 2) + varIndex;
       } else {
-        optimizedOpcode = Constants.ISTORE_0 + ((opcode - Opcodes.ISTORE) << 2) + var;
+        optimizedOpcode = Constants.ISTORE_0 + ((opcode - Opcodes.ISTORE) << 2) + varIndex;
       }
       code.putByte(optimizedOpcode);
-    } else if (var >= 256) {
-      code.putByte(Constants.WIDE).put12(opcode, var);
+    } else if (varIndex >= 256) {
+      code.putByte(Constants.WIDE).put12(opcode, varIndex);
     } else {
-      code.put11(opcode, var);
+      code.put11(opcode, varIndex);
     }
     // If needed, update the maximum stack size and number of locals, and stack map frames.
     if (currentBasicBlock != null) {
       if (compute == COMPUTE_ALL_FRAMES || compute == COMPUTE_INSERTED_FRAMES) {
-        currentBasicBlock.frame.execute(opcode, var, null, null);
+        currentBasicBlock.frame.execute(opcode, varIndex, null, null);
       } else {
         if (opcode == Opcodes.RET) {
           // No stack size delta.
@@ -957,9 +946,9 @@ final class MethodWriter extends MethodVisitor {
           || opcode == Opcodes.DLOAD
           || opcode == Opcodes.LSTORE
           || opcode == Opcodes.DSTORE) {
-        currentMaxLocals = var + 2;
+        currentMaxLocals = varIndex + 2;
       } else {
-        currentMaxLocals = var + 1;
+        currentMaxLocals = varIndex + 1;
       }
       if (currentMaxLocals > maxLocals) {
         maxLocals = currentMaxLocals;
@@ -1319,21 +1308,21 @@ final class MethodWriter extends MethodVisitor {
   }
 
   @Override
-  public void visitIincInsn(final int var, final int increment) {
+  public void visitIincInsn(final int varIndex, final int increment) {
     lastBytecodeOffset = code.length;
     // Add the instruction to the bytecode of the method.
-    if ((var > 255) || (increment > 127) || (increment < -128)) {
-      code.putByte(Constants.WIDE).put12(Opcodes.IINC, var).putShort(increment);
+    if ((varIndex > 255) || (increment > 127) || (increment < -128)) {
+      code.putByte(Constants.WIDE).put12(Opcodes.IINC, varIndex).putShort(increment);
     } else {
-      code.putByte(Opcodes.IINC).put11(var, increment);
+      code.putByte(Opcodes.IINC).put11(varIndex, increment);
     }
     // If needed, update the maximum stack size and number of locals, and stack map frames.
     if (currentBasicBlock != null
         && (compute == COMPUTE_ALL_FRAMES || compute == COMPUTE_INSERTED_FRAMES)) {
-      currentBasicBlock.frame.execute(Opcodes.IINC, var, null, null);
+      currentBasicBlock.frame.execute(Opcodes.IINC, varIndex, null, null);
     }
     if (compute != COMPUTE_NOTHING) {
-      int currentMaxLocals = var + 1;
+      int currentMaxLocals = varIndex + 1;
       if (currentMaxLocals > maxLocals) {
         maxLocals = currentMaxLocals;
       }
@@ -1416,20 +1405,22 @@ final class MethodWriter extends MethodVisitor {
   @Override
   public AnnotationVisitor visitInsnAnnotation(
       final int typeRef, final TypePath typePath, final String descriptor, final boolean visible) {
-    // Create a ByteVector to hold a 'type_annotation' JVMS structure.
-    // See https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.7.20.
-    ByteVector typeAnnotation = new ByteVector();
-    // Write target_type, target_info, and target_path.
-    TypeReference.putTarget((typeRef & 0xFF0000FF) | (lastBytecodeOffset << 8), typeAnnotation);
-    TypePath.put(typePath, typeAnnotation);
-    // Write type_index and reserve space for num_element_value_pairs.
-    typeAnnotation.putShort(symbolTable.addConstantUtf8(descriptor)).putShort(0);
     if (visible) {
       return lastCodeRuntimeVisibleTypeAnnotation =
-          new AnnotationWriter(symbolTable, typeAnnotation, lastCodeRuntimeVisibleTypeAnnotation);
+          AnnotationWriter.create(
+              symbolTable,
+              (typeRef & 0xFF0000FF) | (lastBytecodeOffset << 8),
+              typePath,
+              descriptor,
+              lastCodeRuntimeVisibleTypeAnnotation);
     } else {
       return lastCodeRuntimeInvisibleTypeAnnotation =
-          new AnnotationWriter(symbolTable, typeAnnotation, lastCodeRuntimeInvisibleTypeAnnotation);
+          AnnotationWriter.create(
+              symbolTable,
+              (typeRef & 0xFF0000FF) | (lastBytecodeOffset << 8),
+              typePath,
+              descriptor,
+              lastCodeRuntimeInvisibleTypeAnnotation);
     }
   }
 
@@ -1450,20 +1441,14 @@ final class MethodWriter extends MethodVisitor {
   @Override
   public AnnotationVisitor visitTryCatchAnnotation(
       final int typeRef, final TypePath typePath, final String descriptor, final boolean visible) {
-    // Create a ByteVector to hold a 'type_annotation' JVMS structure.
-    // See https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.7.20.
-    ByteVector typeAnnotation = new ByteVector();
-    // Write target_type, target_info, and target_path.
-    TypeReference.putTarget(typeRef, typeAnnotation);
-    TypePath.put(typePath, typeAnnotation);
-    // Write type_index and reserve space for num_element_value_pairs.
-    typeAnnotation.putShort(symbolTable.addConstantUtf8(descriptor)).putShort(0);
     if (visible) {
       return lastCodeRuntimeVisibleTypeAnnotation =
-          new AnnotationWriter(symbolTable, typeAnnotation, lastCodeRuntimeVisibleTypeAnnotation);
+          AnnotationWriter.create(
+              symbolTable, typeRef, typePath, descriptor, lastCodeRuntimeVisibleTypeAnnotation);
     } else {
       return lastCodeRuntimeInvisibleTypeAnnotation =
-          new AnnotationWriter(symbolTable, typeAnnotation, lastCodeRuntimeInvisibleTypeAnnotation);
+          AnnotationWriter.create(
+              symbolTable, typeRef, typePath, descriptor, lastCodeRuntimeInvisibleTypeAnnotation);
     }
   }
 
@@ -1531,10 +1516,18 @@ final class MethodWriter extends MethodVisitor {
     typeAnnotation.putShort(symbolTable.addConstantUtf8(descriptor)).putShort(0);
     if (visible) {
       return lastCodeRuntimeVisibleTypeAnnotation =
-          new AnnotationWriter(symbolTable, typeAnnotation, lastCodeRuntimeVisibleTypeAnnotation);
+          new AnnotationWriter(
+              symbolTable,
+              /* useNamedValues = */ true,
+              typeAnnotation,
+              lastCodeRuntimeVisibleTypeAnnotation);
     } else {
       return lastCodeRuntimeInvisibleTypeAnnotation =
-          new AnnotationWriter(symbolTable, typeAnnotation, lastCodeRuntimeInvisibleTypeAnnotation);
+          new AnnotationWriter(
+              symbolTable,
+              /* useNamedValues = */ true,
+              typeAnnotation,
+              lastCodeRuntimeInvisibleTypeAnnotation);
     }
   }
 
@@ -1951,6 +1944,7 @@ final class MethodWriter extends MethodVisitor {
         putAbstractTypes(3, 3 + numLocal);
         stackMapTableEntries.putShort(numStack);
         putAbstractTypes(3 + numLocal, 3 + numLocal + numStack);
+        break;
     }
   }
 
@@ -2004,10 +1998,6 @@ final class MethodWriter extends MethodVisitor {
    * attribute) are the same as the corresponding attributes in the given method.
    *
    * @param source the source ClassReader from which the attributes of this method might be copied.
-   * @param methodInfoOffset the offset in 'source.b' of the method_info JVMS structure from which
-   *     the attributes of this method might be copied.
-   * @param methodInfoLength the length in 'source.b' of the method_info JVMS structure from which
-   *     the attributes of this method might be copied.
    * @param hasSyntheticAttribute whether the method_info JVMS structure from which the attributes
    *     of this method might be copied contains a Synthetic attribute.
    * @param hasDeprecatedAttribute whether the method_info JVMS structure from which the attributes
@@ -2024,8 +2014,6 @@ final class MethodWriter extends MethodVisitor {
    */
   boolean canCopyMethodAttributes(
       final ClassReader source,
-      final int methodInfoOffset,
-      final int methodInfoLength,
       final boolean hasSyntheticAttribute,
       final boolean hasDeprecatedAttribute,
       final int descriptorIndex,
@@ -2060,12 +2048,23 @@ final class MethodWriter extends MethodVisitor {
         currentExceptionOffset += 2;
       }
     }
+    return true;
+  }
+
+  /**
+   * Sets the source from which the attributes of this method will be copied.
+   *
+   * @param methodInfoOffset the offset in 'symbolTable.getSource()' of the method_info JVMS
+   *     structure from which the attributes of this method will be copied.
+   * @param methodInfoLength the length in 'symbolTable.getSource()' of the method_info JVMS
+   *     structure from which the attributes of this method will be copied.
+   */
+  void setMethodAttributesSource(final int methodInfoOffset, final int methodInfoLength) {
     // Don't copy the attributes yet, instead store their location in the source class reader so
     // they can be copied later, in {@link #putMethodInfo}. Note that we skip the 6 header bytes
     // of the method_info JVMS structure.
     this.sourceOffset = methodInfoOffset + 6;
     this.sourceLength = methodInfoLength - 6;
-    return true;
   }
 
   /**
@@ -2133,29 +2132,13 @@ final class MethodWriter extends MethodVisitor {
       symbolTable.addConstantUtf8(Constants.EXCEPTIONS);
       size += 8 + 2 * numberOfExceptions;
     }
-    boolean useSyntheticAttribute = symbolTable.getMajorVersion() < Opcodes.V1_5;
-    if ((accessFlags & Opcodes.ACC_SYNTHETIC) != 0 && useSyntheticAttribute) {
-      symbolTable.addConstantUtf8(Constants.SYNTHETIC);
-      size += 6;
-    }
-    if (signatureIndex != 0) {
-      symbolTable.addConstantUtf8(Constants.SIGNATURE);
-      size += 8;
-    }
-    if ((accessFlags & Opcodes.ACC_DEPRECATED) != 0) {
-      symbolTable.addConstantUtf8(Constants.DEPRECATED);
-      size += 6;
-    }
-    if (lastRuntimeVisibleAnnotation != null) {
-      size +=
-          lastRuntimeVisibleAnnotation.computeAnnotationsSize(
-              Constants.RUNTIME_VISIBLE_ANNOTATIONS);
-    }
-    if (lastRuntimeInvisibleAnnotation != null) {
-      size +=
-          lastRuntimeInvisibleAnnotation.computeAnnotationsSize(
-              Constants.RUNTIME_INVISIBLE_ANNOTATIONS);
-    }
+    size += Attribute.computeAttributesSize(symbolTable, accessFlags, signatureIndex);
+    size +=
+        AnnotationWriter.computeAnnotationsSize(
+            lastRuntimeVisibleAnnotation,
+            lastRuntimeInvisibleAnnotation,
+            lastRuntimeVisibleTypeAnnotation,
+            lastRuntimeInvisibleTypeAnnotation);
     if (lastRuntimeVisibleParameterAnnotations != null) {
       size +=
           AnnotationWriter.computeParameterAnnotationsSize(
@@ -2173,16 +2156,6 @@ final class MethodWriter extends MethodVisitor {
               invisibleAnnotableParameterCount == 0
                   ? lastRuntimeInvisibleParameterAnnotations.length
                   : invisibleAnnotableParameterCount);
-    }
-    if (lastRuntimeVisibleTypeAnnotation != null) {
-      size +=
-          lastRuntimeVisibleTypeAnnotation.computeAnnotationsSize(
-              Constants.RUNTIME_VISIBLE_TYPE_ANNOTATIONS);
-    }
-    if (lastRuntimeInvisibleTypeAnnotation != null) {
-      size +=
-          lastRuntimeInvisibleTypeAnnotation.computeAnnotationsSize(
-              Constants.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS);
     }
     if (defaultValue != null) {
       symbolTable.addConstantUtf8(Constants.ANNOTATION_DEFAULT);
@@ -2211,7 +2184,7 @@ final class MethodWriter extends MethodVisitor {
     output.putShort(accessFlags & ~mask).putShort(nameIndex).putShort(descriptorIndex);
     // If this method_info must be copied from an existing one, copy it now and return early.
     if (sourceOffset != 0) {
-      output.putByteArray(symbolTable.getSource().b, sourceOffset, sourceLength);
+      output.putByteArray(symbolTable.getSource().classFileBuffer, sourceOffset, sourceLength);
       return;
     }
     // For ease of reference, we use here the same attribute order as in Section 4.7 of the JVMS.
@@ -2365,26 +2338,14 @@ final class MethodWriter extends MethodVisitor {
         output.putShort(exceptionIndex);
       }
     }
-    if ((accessFlags & Opcodes.ACC_SYNTHETIC) != 0 && useSyntheticAttribute) {
-      output.putShort(symbolTable.addConstantUtf8(Constants.SYNTHETIC)).putInt(0);
-    }
-    if (signatureIndex != 0) {
-      output
-          .putShort(symbolTable.addConstantUtf8(Constants.SIGNATURE))
-          .putInt(2)
-          .putShort(signatureIndex);
-    }
-    if ((accessFlags & Opcodes.ACC_DEPRECATED) != 0) {
-      output.putShort(symbolTable.addConstantUtf8(Constants.DEPRECATED)).putInt(0);
-    }
-    if (lastRuntimeVisibleAnnotation != null) {
-      lastRuntimeVisibleAnnotation.putAnnotations(
-          symbolTable.addConstantUtf8(Constants.RUNTIME_VISIBLE_ANNOTATIONS), output);
-    }
-    if (lastRuntimeInvisibleAnnotation != null) {
-      lastRuntimeInvisibleAnnotation.putAnnotations(
-          symbolTable.addConstantUtf8(Constants.RUNTIME_INVISIBLE_ANNOTATIONS), output);
-    }
+    Attribute.putAttributes(symbolTable, accessFlags, signatureIndex, output);
+    AnnotationWriter.putAnnotations(
+        symbolTable,
+        lastRuntimeVisibleAnnotation,
+        lastRuntimeInvisibleAnnotation,
+        lastRuntimeVisibleTypeAnnotation,
+        lastRuntimeInvisibleTypeAnnotation,
+        output);
     if (lastRuntimeVisibleParameterAnnotations != null) {
       AnnotationWriter.putParameterAnnotations(
           symbolTable.addConstantUtf8(Constants.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS),
@@ -2402,14 +2363,6 @@ final class MethodWriter extends MethodVisitor {
               ? lastRuntimeInvisibleParameterAnnotations.length
               : invisibleAnnotableParameterCount,
           output);
-    }
-    if (lastRuntimeVisibleTypeAnnotation != null) {
-      lastRuntimeVisibleTypeAnnotation.putAnnotations(
-          symbolTable.addConstantUtf8(Constants.RUNTIME_VISIBLE_TYPE_ANNOTATIONS), output);
-    }
-    if (lastRuntimeInvisibleTypeAnnotation != null) {
-      lastRuntimeInvisibleTypeAnnotation.putAnnotations(
-          symbolTable.addConstantUtf8(Constants.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS), output);
     }
     if (defaultValue != null) {
       output

@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,10 +15,6 @@
  */
 
 package org.springframework.core.io;
-
-import org.springframework.core.NestedIOException;
-import org.springframework.lang.Nullable;
-import org.springframework.util.ResourceUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -30,11 +26,13 @@ import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import org.springframework.lang.Nullable;
+import org.springframework.util.ResourceUtils;
+
 /**
- * Resource 接口的默认抽象实现。
- *
- * 它实现了 Resource 接口的大部分的公共实现，作为 Resource 接口中的重中之重
- *
  * Convenience base class for {@link Resource} implementations,
  * pre-implementing typical behavior.
  *
@@ -43,36 +41,45 @@ import java.nio.channels.ReadableByteChannel;
  * throw an exception; and "toString" will return the description.
  *
  * @author Juergen Hoeller
+ * @author Sam Brannen
  * @since 28.12.2003
  */
 public abstract class AbstractResource implements Resource {
 
 	/**
-     * 判断是否存在
-     *
 	 * This implementation checks whether a File can be opened,
 	 * falling back to whether an InputStream can be opened.
-	 * This will cover both directories and content resources.
+	 * <p>This will cover both directories and content resources.
 	 */
 	@Override
 	public boolean exists() {
-		// Try file existence: can we find the file in the file system? 基于 File 进行判断
-		try {
-			return getFile().exists();
-		} catch (IOException ex) {
-			// Fall back to stream existence: can we open the stream? 基于 InputStream 进行判断
+		// Try file existence: can we find the file in the file system?
+		if (isFile()) {
 			try {
-				getInputStream().close();
-				return true;
-			} catch (Throwable isEx) {
-				return false;
+				return getFile().exists();
 			}
+			catch (IOException ex) {
+				Log logger = LogFactory.getLog(getClass());
+				if (logger.isDebugEnabled()) {
+					logger.debug("Could not retrieve File for existence check of " + getDescription(), ex);
+				}
+			}
+		}
+		// Fall back to stream existence: can we open the stream?
+		try {
+			getInputStream().close();
+			return true;
+		}
+		catch (Throwable ex) {
+			Log logger = LogFactory.getLog(getClass());
+			if (logger.isDebugEnabled()) {
+				logger.debug("Could not retrieve InputStream for existence check of " + getDescription(), ex);
+			}
+			return false;
 		}
 	}
 
 	/**
-     * 通过 {@link #exists()} 判断，是否可读
-     *
 	 * This implementation always returns {@code true} for a resource
 	 * that {@link #exists() exists} (revised as of 5.1).
 	 */
@@ -82,8 +89,6 @@ public abstract class AbstractResource implements Resource {
 	}
 
 	/**
-     * 直接返回 false，表示未被打开
-     *
 	 * This implementation always returns {@code false}.
 	 */
 	@Override
@@ -92,8 +97,6 @@ public abstract class AbstractResource implements Resource {
 	}
 
 	/**
-     * 直接返回false，表示不为 File
-     *
 	 * This implementation always returns {@code false}.
 	 */
 	@Override
@@ -102,8 +105,6 @@ public abstract class AbstractResource implements Resource {
 	}
 
 	/**
-     * 抛出 FileNotFoundException 异常，交给子类实现
-     *
 	 * This implementation throws a FileNotFoundException, assuming
 	 * that the resource cannot be resolved to a URL.
 	 */
@@ -113,24 +114,22 @@ public abstract class AbstractResource implements Resource {
 	}
 
 	/**
-     * 基于 getURL() 返回的 URL 构建 URI
-     *
 	 * This implementation builds a URI based on the URL returned
 	 * by {@link #getURL()}.
 	 */
 	@Override
+	@SuppressWarnings("deprecation")
 	public URI getURI() throws IOException {
 		URL url = getURL();
 		try {
 			return ResourceUtils.toURI(url);
-		} catch (URISyntaxException ex) {
-			throw new NestedIOException("Invalid URI [" + url + "]", ex);
+		}
+		catch (URISyntaxException ex) {
+			throw new org.springframework.core.NestedIOException("Invalid URI [" + url + "]", ex);
 		}
 	}
 
 	/**
-     * 抛出 FileNotFoundException 异常，交给子类实现
-     *
 	 * This implementation throws a FileNotFoundException, assuming
 	 * that the resource cannot be resolved to an absolute file path.
 	 */
@@ -140,8 +139,6 @@ public abstract class AbstractResource implements Resource {
 	}
 
 	/**
-     * 根据 getInputStream() 的返回结果构建 ReadableByteChannel
-     *
 	 * This implementation returns {@link Channels#newChannel(InputStream)}
 	 * with the result of {@link #getInputStream()}.
 	 * <p>This is the same as in {@link Resource}'s corresponding default method
@@ -153,13 +150,11 @@ public abstract class AbstractResource implements Resource {
 	}
 
 	/**
-     * 获取资源的长度
-     *
-     * 这个资源内容长度实际就是资源的字节长度，通过全部读取一遍来判断
-     *
-	 * This implementation reads the entire InputStream to calculate the
-	 * content length. Subclasses will almost always be able to provide
-	 * a more optimal version of this, e.g. checking a File length.
+	 * This method reads the entire InputStream to determine the content length.
+	 * <p>For a custom subclass of {@code InputStreamResource}, we strongly
+	 * recommend overriding this method with a more optimal implementation, e.g.
+	 * checking File length, or possibly simply returning -1 if the stream can
+	 * only be read once.
 	 * @see #getInputStream()
 	 */
 	@Override
@@ -167,40 +162,43 @@ public abstract class AbstractResource implements Resource {
 		InputStream is = getInputStream();
 		try {
 			long size = 0;
-			byte[] buf = new byte[255]; // 每次最多读取 255 字节
+			byte[] buf = new byte[256];
 			int read;
 			while ((read = is.read(buf)) != -1) {
 				size += read;
 			}
 			return size;
-		} finally {
+		}
+		finally {
 			try {
 				is.close();
-			} catch (IOException ex) {
+			}
+			catch (IOException ex) {
+				Log logger = LogFactory.getLog(getClass());
+				if (logger.isDebugEnabled()) {
+					logger.debug("Could not close content-length InputStream for " + getDescription(), ex);
+				}
 			}
 		}
 	}
 
 	/**
-     * 返回资源最后的修改时间
-     *
 	 * This implementation checks the timestamp of the underlying File,
 	 * if available.
 	 * @see #getFileForLastModifiedCheck()
 	 */
 	@Override
 	public long lastModified() throws IOException {
-		long lastModified = getFileForLastModifiedCheck().lastModified();
-		if (lastModified == 0L) {
+		File fileToCheck = getFileForLastModifiedCheck();
+		long lastModified = fileToCheck.lastModified();
+		if (lastModified == 0L && !fileToCheck.exists()) {
 			throw new FileNotFoundException(getDescription() +
-					" cannot be resolved in the file system for resolving its last-modified timestamp");
+					" cannot be resolved in the file system for checking its last-modified timestamp");
 		}
 		return lastModified;
 	}
 
 	/**
-     * 抛出 FileNotFoundException 异常，交给子类实现
-     *
 	 * Determine the File to use for timestamp checking.
 	 * <p>The default implementation delegates to {@link #getFile()}.
 	 * @return the File to use for timestamp checking (never {@code null})
@@ -222,8 +220,6 @@ public abstract class AbstractResource implements Resource {
 	}
 
 	/**
-     * 获取资源名称，默认返回 null ，交给子类实现
-     *
 	 * This implementation always returns {@code null},
 	 * assuming that this resource type does not have a filename.
 	 */
@@ -239,7 +235,7 @@ public abstract class AbstractResource implements Resource {
 	 * @see #getDescription()
 	 */
 	@Override
-	public boolean equals(Object other) {
+	public boolean equals(@Nullable Object other) {
 		return (this == other || (other instanceof Resource &&
 				((Resource) other).getDescription().equals(getDescription())));
 	}
@@ -254,8 +250,6 @@ public abstract class AbstractResource implements Resource {
 	}
 
 	/**
-     * 返回资源的描述
-     *
 	 * This implementation returns the description of this resource.
 	 * @see #getDescription()
 	 */

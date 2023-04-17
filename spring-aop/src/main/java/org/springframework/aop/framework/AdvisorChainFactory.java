@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,14 +16,12 @@
 
 package org.springframework.aop.framework;
 
-import org.springframework.lang.Nullable;
-
 import java.lang.reflect.Method;
 import java.util.List;
 
+import org.springframework.lang.Nullable;
+
 /**
- * Advisor 调用链工厂接口，用于获取每个方法调用时的调用链
- *
  * Factory interface for advisor chains.
  *
  * @author Rod Johnson
@@ -32,8 +30,6 @@ import java.util.List;
 public interface AdvisorChainFactory {
 
 	/**
-     * 获得指定方法拦截的拦截器链
-     *
 	 * Determine a list of {@link org.aopalliance.intercept.MethodInterceptor} objects
 	 * for the given advisor chain configuration.
 	 * @param config the AOP configuration in the form of an Advised object

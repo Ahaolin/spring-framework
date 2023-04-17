@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,15 @@
 
 package org.springframework.web.multipart.support;
 
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.lang.Nullable;
@@ -23,10 +32,6 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
-import java.util.*;
 
 /**
  * Abstract base implementation of the MultipartHttpServletRequest interface.
@@ -41,6 +46,7 @@ public abstract class AbstractMultipartHttpServletRequest extends HttpServletReq
 
 	@Nullable
 	private MultiValueMap<String, MultipartFile> multipartFiles;
+
 
 	/**
 	 * Wrap the given HttpServletRequest in a MultipartHttpServletRequest.
@@ -87,7 +93,8 @@ public abstract class AbstractMultipartHttpServletRequest extends HttpServletReq
 		List<MultipartFile> multipartFiles = getMultipartFiles().get(name);
 		if (multipartFiles != null) {
 			return multipartFiles;
-		} else {
+		}
+		else {
 			return Collections.emptyList();
 		}
 	}
@@ -130,11 +137,9 @@ public abstract class AbstractMultipartHttpServletRequest extends HttpServletReq
 	 * @see #initializeMultipart()
 	 */
 	protected MultiValueMap<String, MultipartFile> getMultipartFiles() {
-		// 如果未初始化，则进行初始化
-	    if (this.multipartFiles == null) {
+		if (this.multipartFiles == null) {
 			initializeMultipart();
 		}
-		// 返回
 		return this.multipartFiles;
 	}
 

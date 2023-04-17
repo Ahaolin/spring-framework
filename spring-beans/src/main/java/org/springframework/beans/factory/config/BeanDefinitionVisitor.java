@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,12 @@
 
 package org.springframework.beans.factory.config;
 
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.lang.Nullable;
@@ -23,14 +29,12 @@ import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringValueResolver;
 
-import java.util.*;
-
 /**
  * Visitor class for traversing {@link BeanDefinition} objects, in particular
  * the property values and constructor argument values contained in them,
  * resolving bean metadata values.
  *
- * <p>Used by {@link PropertyPlaceholderConfigurer} to parse all String values
+ * <p>Used by {@link PlaceholderConfigurerSupport} to parse all String values
  * contained in a BeanDefinition, resolving any placeholders found.
  *
  * @author Juergen Hoeller
@@ -39,7 +43,7 @@ import java.util.*;
  * @see BeanDefinition
  * @see BeanDefinition#getPropertyValues
  * @see BeanDefinition#getConstructorArgumentValues
- * @see PropertyPlaceholderConfigurer
+ * @see PlaceholderConfigurerSupport
  */
 public class BeanDefinitionVisitor {
 
@@ -139,12 +143,9 @@ public class BeanDefinitionVisitor {
 
 	protected void visitPropertyValues(MutablePropertyValues pvs) {
 		PropertyValue[] pvArray = pvs.getPropertyValues();
-		// 遍历 PropertyValue 数组
 		for (PropertyValue pv : pvArray) {
-		    // 解析真
 			Object newVal = resolveValue(pv.getValue());
 			if (!ObjectUtils.nullSafeEquals(newVal, pv.getValue())) {
-			    // 设置到 PropertyValue 中
 				pvs.add(pv.getName(), newVal);
 			}
 		}
@@ -173,9 +174,11 @@ public class BeanDefinitionVisitor {
 	protected Object resolveValue(@Nullable Object value) {
 		if (value instanceof BeanDefinition) {
 			visitBeanDefinition((BeanDefinition) value);
-		} else if (value instanceof BeanDefinitionHolder) {
+		}
+		else if (value instanceof BeanDefinitionHolder) {
 			visitBeanDefinition(((BeanDefinitionHolder) value).getBeanDefinition());
-		} else if (value instanceof RuntimeBeanReference) {
+		}
+		else if (value instanceof RuntimeBeanReference) {
 			RuntimeBeanReference ref = (RuntimeBeanReference) value;
 			String newBeanName = resolveStringValue(ref.getBeanName());
 			if (newBeanName == null) {
@@ -184,7 +187,8 @@ public class BeanDefinitionVisitor {
 			if (!newBeanName.equals(ref.getBeanName())) {
 				return new RuntimeBeanReference(newBeanName);
 			}
-		} else if (value instanceof RuntimeBeanNameReference) {
+		}
+		else if (value instanceof RuntimeBeanNameReference) {
 			RuntimeBeanNameReference ref = (RuntimeBeanNameReference) value;
 			String newBeanName = resolveStringValue(ref.getBeanName());
 			if (newBeanName == null) {
@@ -193,22 +197,28 @@ public class BeanDefinitionVisitor {
 			if (!newBeanName.equals(ref.getBeanName())) {
 				return new RuntimeBeanNameReference(newBeanName);
 			}
-		} else if (value instanceof Object[]) {
+		}
+		else if (value instanceof Object[]) {
 			visitArray((Object[]) value);
-		} else if (value instanceof List) {
+		}
+		else if (value instanceof List) {
 			visitList((List) value);
-		} else if (value instanceof Set) {
+		}
+		else if (value instanceof Set) {
 			visitSet((Set) value);
-		} else if (value instanceof Map) {
+		}
+		else if (value instanceof Map) {
 			visitMap((Map) value);
-		} else if (value instanceof TypedStringValue) {
+		}
+		else if (value instanceof TypedStringValue) {
 			TypedStringValue typedStringValue = (TypedStringValue) value;
 			String stringValue = typedStringValue.getValue();
 			if (stringValue != null) {
 				String visitedString = resolveStringValue(stringValue);
 				typedStringValue.setValue(visitedString);
 			}
-		} else if (value instanceof String) {
+		}
+		else if (value instanceof String) {
 			return resolveStringValue((String) value);
 		}
 		return value;
@@ -224,7 +234,7 @@ public class BeanDefinitionVisitor {
 		}
 	}
 
-	@SuppressWarnings({"unchecked", "rawtypes"})
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	protected void visitList(List listVal) {
 		for (int i = 0; i < listVal.size(); i++) {
 			Object elem = listVal.get(i);
@@ -235,7 +245,7 @@ public class BeanDefinitionVisitor {
 		}
 	}
 
-	@SuppressWarnings({"unchecked", "rawtypes"})
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	protected void visitSet(Set setVal) {
 		Set newContent = new LinkedHashSet();
 		boolean entriesModified = false;
@@ -252,7 +262,7 @@ public class BeanDefinitionVisitor {
 		}
 	}
 
-	@SuppressWarnings({"unchecked", "rawtypes"})
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	protected void visitMap(Map<?, ?> mapVal) {
 		Map newContent = new LinkedHashMap();
 		boolean entriesModified = false;
@@ -283,7 +293,6 @@ public class BeanDefinitionVisitor {
 			throw new IllegalStateException("No StringValueResolver specified - pass a resolver " +
 					"object into the constructor or override the 'resolveStringValue' method");
 		}
-		// 解析真值
 		String resolvedValue = this.valueResolver.resolveStringValue(strVal);
 		// Return original String if not modified.
 		return (strVal.equals(resolvedValue) ? strVal : resolvedValue);

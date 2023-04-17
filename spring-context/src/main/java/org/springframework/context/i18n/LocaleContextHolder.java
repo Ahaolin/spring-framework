@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -295,7 +295,7 @@ public final class LocaleContextHolder {
 	 * <p>Note: This method has a fallback to the shared default TimeZone,
 	 * either at the framework level or at the JVM-wide system level.
 	 * If you'd like to check for the raw LocaleContext content
-	 * (which may indicate no specific time zone through {@code null}, use
+	 * (which may indicate no specific time zone through {@code null}), use
 	 * {@link #getLocaleContext()} and call {@link TimeZoneAwareLocaleContext#getTimeZone()}
 	 * after downcasting to {@link TimeZoneAwareLocaleContext}.
 	 * @return the current TimeZone, or the system default TimeZone if no

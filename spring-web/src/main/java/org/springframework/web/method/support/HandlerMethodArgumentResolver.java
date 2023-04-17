@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,8 +23,6 @@ import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 
 /**
- * HandlerMethod 的参数解析器接口
- *
  * Strategy interface for resolving method parameters into argument values in
  * the context of a given request.
  *
@@ -35,8 +33,6 @@ import org.springframework.web.context.request.NativeWebRequest;
 public interface HandlerMethodArgumentResolver {
 
 	/**
-     * 是否支持解析该参数
-     *
 	 * Whether the given {@linkplain MethodParameter method parameter} is
 	 * supported by this resolver.
 	 * @param parameter the method parameter to check
@@ -46,8 +42,6 @@ public interface HandlerMethodArgumentResolver {
 	boolean supportsParameter(MethodParameter parameter);
 
 	/**
-     * 解析该参数
-     *
 	 * Resolves a method parameter into an argument value from a given request.
 	 * A {@link ModelAndViewContainer} provides access to the model for the
 	 * request. A {@link WebDataBinderFactory} provides a way to create

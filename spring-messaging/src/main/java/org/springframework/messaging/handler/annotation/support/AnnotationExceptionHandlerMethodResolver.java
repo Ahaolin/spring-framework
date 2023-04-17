@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,7 +29,7 @@ import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.invocation.AbstractExceptionHandlerMethodResolver;
 
 /**
- * A sub-class of {@link AbstractExceptionHandlerMethodResolver} that looks for
+ * A subclass of {@link AbstractExceptionHandlerMethodResolver} that looks for
  * {@link MessageExceptionHandler}-annotated methods in a given class. The actual
  * exception types handled are extracted either from the annotation, if present,
  * or from the method signature as a fallback option.
@@ -56,8 +56,7 @@ public class AnnotationExceptionHandlerMethodResolver extends AbstractExceptionH
 		Map<Class<? extends Throwable>, Method> result = new HashMap<>();
 		for (Map.Entry<Method, MessageExceptionHandler> entry : methods.entrySet()) {
 			Method method = entry.getKey();
-			List<Class<? extends Throwable>> exceptionTypes = new ArrayList<>();
-			exceptionTypes.addAll(Arrays.asList(entry.getValue().value()));
+			List<Class<? extends Throwable>> exceptionTypes = new ArrayList<>(Arrays.asList(entry.getValue().value()));
 			if (exceptionTypes.isEmpty()) {
 				exceptionTypes.addAll(getExceptionsFromMethodSignature(method));
 			}

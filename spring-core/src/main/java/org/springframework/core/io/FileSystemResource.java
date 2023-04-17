@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,6 +26,7 @@ import java.net.URL;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -36,12 +37,6 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
- * <pre>
- * 对 `java.io.File` 类型资源的封装，只要是跟 File 打交道的，基本上与 `FileSystemResource `也可以打交道。
- * 支持文件和 URL 的形式，实现 `WritableResource `接口，且从 Spring Framework 5.0 开始，`FileSystemResource `使用 NIO2 API进行读/写交互。
- * </pre>
- *
- *
  * {@link Resource} implementation for {@code java.io.File} and
  * {@code java.nio.file.Path} handles with a file system target.
  * Supports resolution as a {@code File} and also as a {@code URL}.
@@ -54,6 +49,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Juergen Hoeller
  * @since 28.12.2003
+ * @see #FileSystemResource(String)
  * @see #FileSystemResource(File)
  * @see #FileSystemResource(Path)
  * @see java.io.File
@@ -74,9 +70,9 @@ public class FileSystemResource extends AbstractResource implements WritableReso
 	 * <p>Note: When building relative resources via {@link #createRelative},
 	 * it makes a difference whether the specified resource base path here
 	 * ends with a slash or not. In the case of "C:/dir1/", relative paths
-	 * will be built underneath that root: e.g. relative path "dir2" ->
+	 * will be built underneath that root: e.g. relative path "dir2" &rarr;
 	 * "C:/dir1/dir2". In the case of "C:/dir1", relative paths will apply
-	 * at the same directory level: relative path "dir2" -> "C:/dir2".
+	 * at the same directory level: relative path "dir2" &rarr; "C:/dir2".
 	 * @param path a file path
 	 * @see #FileSystemResource(Path)
 	 */
@@ -91,11 +87,11 @@ public class FileSystemResource extends AbstractResource implements WritableReso
 	 * Create a new {@code FileSystemResource} from a {@link File} handle.
 	 * <p>Note: When building relative resources via {@link #createRelative},
 	 * the relative path will apply <i>at the same directory level</i>:
-	 * e.g. new File("C:/dir1"), relative path "dir2" -> "C:/dir2"!
-	 * If you prefer to have relative paths built underneath the given root
-	 * directory, use the {@link #FileSystemResource(String) constructor with a file path}
-	 * to append a trailing slash to the root path: "C:/dir1/", which
-	 * indicates this directory as root for all relative paths.
+	 * e.g. new File("C:/dir1"), relative path "dir2" &rarr; "C:/dir2"!
+	 * If you prefer to have relative paths built underneath the given root directory,
+	 * use the {@link #FileSystemResource(String) constructor with a file path}
+	 * to append a trailing slash to the root path: "C:/dir1/", which indicates
+	 * this directory as root for all relative paths.
 	 * @param file a File handle
 	 * @see #FileSystemResource(Path)
 	 * @see #getFile()
@@ -108,20 +104,47 @@ public class FileSystemResource extends AbstractResource implements WritableReso
 	}
 
 	/**
-	 * Create a new {@code FileSystemResource} from a {@link Path} handle.
+	 * Create a new {@code FileSystemResource} from a {@link Path} handle,
+	 * performing all file system interactions via NIO.2 instead of {@link File}.
 	 * <p>In contrast to {@link PathResource}, this variant strictly follows the
 	 * general {@link FileSystemResource} conventions, in particular in terms of
 	 * path cleaning and {@link #createRelative(String)} handling.
+	 * <p>Note: When building relative resources via {@link #createRelative},
+	 * the relative path will apply <i>at the same directory level</i>:
+	 * e.g. Paths.get("C:/dir1"), relative path "dir2" &rarr; "C:/dir2"!
+	 * If you prefer to have relative paths built underneath the given root directory,
+	 * use the {@link #FileSystemResource(String) constructor with a file path}
+	 * to append a trailing slash to the root path: "C:/dir1/", which indicates
+	 * this directory as root for all relative paths. Alternatively, consider
+	 * using {@link PathResource#PathResource(Path)} for {@code java.nio.path.Path}
+	 * resolution in {@code createRelative}, always nesting relative paths.
 	 * @param filePath a Path handle to a file
 	 * @since 5.1
 	 * @see #FileSystemResource(File)
-	 * @see PathResource
 	 */
 	public FileSystemResource(Path filePath) {
 		Assert.notNull(filePath, "Path must not be null");
-		this.filePath = filePath;
-		this.file = null;
 		this.path = StringUtils.cleanPath(filePath.toString());
+		this.file = null;
+		this.filePath = filePath;
+	}
+
+	/**
+	 * Create a new {@code FileSystemResource} from a {@link FileSystem} handle,
+	 * locating the specified path.
+	 * <p>This is an alternative to {@link #FileSystemResource(String)},
+	 * performing all file system interactions via NIO.2 instead of {@link File}.
+	 * @param fileSystem the FileSystem to locate the path within
+	 * @param path a file path
+	 * @since 5.1.1
+	 * @see #FileSystemResource(File)
+	 */
+	public FileSystemResource(FileSystem fileSystem, String path) {
+		Assert.notNull(fileSystem, "FileSystem must not be null");
+		Assert.notNull(path, "Path must not be null");
+		this.path = StringUtils.cleanPath(path);
+		this.file = null;
+		this.filePath = fileSystem.getPath(this.path).normalize();
 	}
 
 
@@ -246,11 +269,44 @@ public class FileSystemResource extends AbstractResource implements WritableReso
 	}
 
 	/**
-	 * This implementation returns the underlying File's length.
+	 * This implementation returns the underlying File/Path length.
 	 */
 	@Override
 	public long contentLength() throws IOException {
-		return (this.file != null ? this.file.length() : Files.size(this.filePath));
+		if (this.file != null) {
+			long length = this.file.length();
+			if (length == 0L && !this.file.exists()) {
+				throw new FileNotFoundException(getDescription() +
+						" cannot be resolved in the file system for checking its content length");
+			}
+			return length;
+		}
+		else {
+			try {
+				return Files.size(this.filePath);
+			}
+			catch (NoSuchFileException ex) {
+				throw new FileNotFoundException(ex.getMessage());
+			}
+		}
+	}
+
+	/**
+	 * This implementation returns the underlying File/Path last-modified time.
+	 */
+	@Override
+	public long lastModified() throws IOException {
+		if (this.file != null) {
+			return super.lastModified();
+		}
+		else {
+			try {
+				return Files.getLastModifiedTime(this.filePath).toMillis();
+			}
+			catch (NoSuchFileException ex) {
+				throw new FileNotFoundException(ex.getMessage());
+			}
+		}
 	}
 
 	/**
@@ -261,7 +317,8 @@ public class FileSystemResource extends AbstractResource implements WritableReso
 	@Override
 	public Resource createRelative(String relativePath) {
 		String pathToUse = StringUtils.applyRelativePath(this.path, relativePath);
-		return new FileSystemResource(pathToUse);
+		return (this.file != null ? new FileSystemResource(pathToUse) :
+				new FileSystemResource(this.filePath.getFileSystem(), pathToUse));
 	}
 
 	/**
@@ -288,7 +345,7 @@ public class FileSystemResource extends AbstractResource implements WritableReso
 	 * This implementation compares the underlying File references.
 	 */
 	@Override
-	public boolean equals(Object other) {
+	public boolean equals(@Nullable Object other) {
 		return (this == other || (other instanceof FileSystemResource &&
 				this.path.equals(((FileSystemResource) other).path)));
 	}

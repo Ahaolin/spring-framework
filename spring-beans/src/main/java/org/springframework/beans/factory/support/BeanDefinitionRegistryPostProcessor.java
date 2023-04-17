@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,11 +20,6 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 
 /**
- * From 《Spring 钩子方法和钩子接口的使用详解》https://www.jianshu.com/p/e22b9fef311c
- *
- * BeanDefinitionRegistryPostProcessor 接口，可以看作是 BeanFactoryPostProcessor 和 ImportBeanDefinitionRegistrar 的功能集合
- * 既可以获取和修改BeanDefinition的元数据，也可以实现 BeanDefinition 的注册、移除等操作。
- *
  * Extension to the standard {@link BeanFactoryPostProcessor} SPI, allowing for
  * the registration of further bean definitions <i>before</i> regular
  * BeanFactoryPostProcessor detection kicks in. In particular,

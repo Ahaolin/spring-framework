@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,7 @@ package org.springframework.web.servlet.mvc;
 
 import java.util.Enumeration;
 import java.util.Properties;
+
 import javax.servlet.Servlet;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -34,7 +35,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 /**
  * Spring Controller implementation that wraps a servlet instance which it manages
- * internally. Such a wrapped servlet is not known outside of this controller;
+ * internally. Such a wrapped servlet is not known outside this controller;
  * its entire lifecycle is covered here (in contrast to {@link ServletForwardingController}).
  *
  * <p>Useful to invoke an existing servlet via Spring's dispatching infrastructure,
@@ -204,7 +205,7 @@ public class ServletWrappingController extends AbstractController
 		}
 
 		@Override
-		@SuppressWarnings({ "unchecked", "rawtypes" })
+		@SuppressWarnings({"rawtypes", "unchecked"})
 		public Enumeration<String> getInitParameterNames() {
 			return (Enumeration) initParameters.keys();
 		}

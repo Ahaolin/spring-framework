@@ -33,8 +33,8 @@ package org.springframework.asm;
  *
  * @author Jason Zaugg
  */
-@SuppressWarnings("serial")
 public final class MethodTooLargeException extends IndexOutOfBoundsException {
+  private static final long serialVersionUID = 6807380416709738314L;
 
   private final String className;
   private final String methodName;
@@ -44,7 +44,7 @@ public final class MethodTooLargeException extends IndexOutOfBoundsException {
   /**
    * Constructs a new {@link MethodTooLargeException}.
    *
-   * @param className the internal name of the owner class.
+   * @param className the internal name of the owner class (see {@link Type#getInternalName()}).
    * @param methodName the name of the method.
    * @param descriptor the descriptor of the method.
    * @param codeSize the size of the method's Code attribute, in bytes.
@@ -64,7 +64,7 @@ public final class MethodTooLargeException extends IndexOutOfBoundsException {
   /**
    * Returns the internal name of the owner class.
    *
-   * @return the internal name of the owner class.
+   * @return the internal name of the owner class (see {@link Type#getInternalName()}).
    */
   public String getClassName() {
     return className;

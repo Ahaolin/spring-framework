@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,7 +32,8 @@ import org.springframework.util.StringUtils;
 
 /**
  * Default implementation of the {@link ResourceLoader} interface.
- * Used by {@link ResourceEditor}, and serves as base class for
+ *
+ * <p>Used by {@link ResourceEditor}, and serves as base class for
  * {@link org.springframework.context.support.AbstractApplicationContext}.
  * Can also be used standalone.
  *
@@ -47,36 +48,22 @@ import org.springframework.util.StringUtils;
  */
 public class DefaultResourceLoader implements ResourceLoader {
 
-    /**
-     * 类加载器
-     */
 	@Nullable
 	private ClassLoader classLoader;
 
-    /**
-     * ProtocolResolver 集合
-     * <pre>
-     *   协议解析器集合,ProtocolResolver定义了从字符串到Resource的解析函数。
-     * </pre>
-     */
 	private final Set<ProtocolResolver> protocolResolvers = new LinkedHashSet<>(4);
 
-    /**
-     * 资源缓存
-     *  <pre>
-     *      protocolResolvers解析的数据会放到其中
-     *  </pre>
-     */
 	private final Map<Class<?>, Map<Resource, ?>> resourceCaches = new ConcurrentHashMap<>(4);
+
 
 	/**
 	 * Create a new DefaultResourceLoader.
 	 * <p>ClassLoader access will happen using the thread context class loader
-	 * at the time of this ResourceLoader's initialization.
+	 * at the time of actual resource access (since 5.3). For more control, pass
+	 * a specific ClassLoader to {@link #DefaultResourceLoader(ClassLoader)}.
 	 * @see java.lang.Thread#getContextClassLoader()
 	 */
 	public DefaultResourceLoader() {
-		this.classLoader = ClassUtils.getDefaultClassLoader();
 	}
 
 	/**
@@ -93,7 +80,7 @@ public class DefaultResourceLoader implements ResourceLoader {
 	 * Specify the ClassLoader to load class path resources with, or {@code null}
 	 * for using the thread context class loader at the time of actual resource access.
 	 * <p>The default is that ClassLoader access will happen using the thread context
-	 * class loader at the time of this ResourceLoader's initialization.
+	 * class loader at the time of actual resource access (since 5.3).
 	 */
 	public void setClassLoader(@Nullable ClassLoader classLoader) {
 		this.classLoader = classLoader;
@@ -112,8 +99,6 @@ public class DefaultResourceLoader implements ResourceLoader {
 	}
 
 	/**
-     * 添加 resolver 到 protocolResolvers 中
-     *
 	 * Register the given resolver with this resource loader, allowing for
 	 * additional protocols to be handled.
 	 * <p>Any such resolver will be invoked ahead of this loader's standard
@@ -130,6 +115,7 @@ public class DefaultResourceLoader implements ResourceLoader {
 	 * Return the collection of currently registered protocol resolvers,
 	 * allowing for introspection as well as modification.
 	 * @since 4.3
+	 * @see #addProtocolResolver(ProtocolResolver)
 	 */
 	public Collection<ProtocolResolver> getProtocolResolvers() {
 		return this.protocolResolvers;
@@ -155,34 +141,31 @@ public class DefaultResourceLoader implements ResourceLoader {
 		this.resourceCaches.clear();
 	}
 
-    // ResourceLoader 中最核心的方法为 `#getResource()` ，它根据提供的 location 返回相应的 Resource 。
-    // 而 DefaultResourceLoader 对该方法提供了**核心实现**
-    // （因为，它的两个子类都没有提供覆盖该方法，所以可以断定 ResourceLoader 的资源加载策略就封装在 DefaultResourceLoader 中)
+
 	@Override
 	public Resource getResource(String location) {
 		Assert.notNull(location, "Location must not be null");
 
-		// 首先，通过 ProtocolResolver 来加载资源
-		for (ProtocolResolver protocolResolver : this.protocolResolvers) {
+		for (ProtocolResolver protocolResolver : getProtocolResolvers()) {
 			Resource resource = protocolResolver.resolve(location, this);
 			if (resource != null) {
 				return resource;
 			}
 		}
-		// 其次，以 / 开头，返回 ClassPathContextResource 类型的资源
+
 		if (location.startsWith("/")) {
 			return getResourceByPath(location);
-        // 再次，以 classpath: 开头，返回 ClassPathResource 类型的资源
-		} else if (location.startsWith(CLASSPATH_URL_PREFIX)) {
+		}
+		else if (location.startsWith(CLASSPATH_URL_PREFIX)) {
 			return new ClassPathResource(location.substring(CLASSPATH_URL_PREFIX.length()), getClassLoader());
-        // 然后，根据是否为文件 URL ，是则返回 FileUrlResource 类型的资源，否则返回 UrlResource 类型的资源
-		} else {
+		}
+		else {
 			try {
 				// Try to parse the location as a URL...
 				URL url = new URL(location);
 				return (ResourceUtils.isFileURL(url) ? new FileUrlResource(url) : new UrlResource(url));
-			} catch (MalformedURLException ex) {
-			    // 最后，返回 ClassPathContextResource 类型的资源
+			}
+			catch (MalformedURLException ex) {
 				// No URL -> resolve as resource path.
 				return getResourceByPath(location);
 			}
@@ -190,8 +173,6 @@ public class DefaultResourceLoader implements ResourceLoader {
 	}
 
 	/**
-     * 返回 ClassPathContextResource 类型的资源 <br>
-     *
 	 * Return a Resource handle for the resource at the given path.
 	 * <p>The default implementation supports class path locations. This should
 	 * be appropriate for standalone implementations but can be overridden,
@@ -205,6 +186,7 @@ public class DefaultResourceLoader implements ResourceLoader {
 	protected Resource getResourceByPath(String path) {
 		return new ClassPathContextResource(path, getClassLoader());
 	}
+
 
 	/**
 	 * ClassPathResource that explicitly expresses a context-relative path

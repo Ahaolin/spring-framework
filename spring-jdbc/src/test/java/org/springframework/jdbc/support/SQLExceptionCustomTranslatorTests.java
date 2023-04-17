@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,16 +16,16 @@
 
 package org.springframework.jdbc.support;
 
+import java.sql.SQLDataException;
 import java.sql.SQLException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.TransientDataAccessResourceException;
 import org.springframework.jdbc.BadSqlGrammarException;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Unit tests for custom SQLException translation.
@@ -38,8 +38,8 @@ public class SQLExceptionCustomTranslatorTests {
 	private static SQLErrorCodes ERROR_CODES = new SQLErrorCodes();
 
 	static {
-		ERROR_CODES.setBadSqlGrammarCodes(new String[] { "1" });
-		ERROR_CODES.setDataAccessResourceFailureCodes(new String[] { "2" });
+		ERROR_CODES.setBadSqlGrammarCodes("1");
+		ERROR_CODES.setDataAccessResourceFailureCodes("2");
 		ERROR_CODES.setCustomSqlExceptionTranslatorClass(CustomSqlExceptionTranslator.class);
 	}
 
@@ -48,18 +48,18 @@ public class SQLExceptionCustomTranslatorTests {
 
 	@Test
 	public void badSqlGrammarException() {
-		SQLException badSqlGrammarExceptionEx = SQLExceptionSubclassFactory.newSQLDataException("", "", 1);
+		SQLException badSqlGrammarExceptionEx = new SQLDataException("", "", 1);
 		DataAccessException dae = sext.translate("task", "SQL", badSqlGrammarExceptionEx);
-		assertEquals(badSqlGrammarExceptionEx, dae.getCause());
-		assertThat(dae, instanceOf(BadSqlGrammarException.class));
+		assertThat(dae.getCause()).isEqualTo(badSqlGrammarExceptionEx);
+		assertThat(dae).isInstanceOf(BadSqlGrammarException.class);
 	}
 
 	@Test
 	public void dataAccessResourceException() {
-		SQLException dataAccessResourceEx = SQLExceptionSubclassFactory.newSQLDataException("", "", 2);
+		SQLException dataAccessResourceEx =  new SQLDataException("", "", 2);
 		DataAccessException dae = sext.translate("task", "SQL", dataAccessResourceEx);
-		assertEquals(dataAccessResourceEx, dae.getCause());
-		assertThat(dae, instanceOf(TransientDataAccessResourceException.class));
+		assertThat(dae.getCause()).isEqualTo(dataAccessResourceEx);
+		assertThat(dae).isInstanceOf(TransientDataAccessResourceException.class);
 	}
 
 }

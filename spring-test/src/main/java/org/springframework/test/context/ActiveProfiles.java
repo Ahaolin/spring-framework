@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,8 +31,12 @@ import org.springframework.core.annotation.AliasFor;
  * an {@link org.springframework.context.ApplicationContext ApplicationContext}
  * for test classes.
  *
- * <p>As of Spring Framework 4.0, this annotation may be used as a
- * <em>meta-annotation</em> to create custom <em>composed annotations</em>.
+ * <p>This annotation may be used as a <em>meta-annotation</em> to create custom
+ * <em>composed annotations</em>.
+ *
+ * <p>As of Spring Framework 5.3, this annotation will be inherited from an
+ * enclosing test class by default. See
+ * {@link NestedTestConfiguration @NestedTestConfiguration} for details.
  *
  * @author Sam Brannen
  * @since 3.1
@@ -74,17 +78,17 @@ public @interface ActiveProfiles {
 	Class<? extends ActiveProfilesResolver> resolver() default ActiveProfilesResolver.class;
 
 	/**
-	 * Whether or not bean definition profiles from superclasses should be
-	 * <em>inherited</em>.
-	 * <p>The default value is {@code true}, which means that a test
-	 * class will <em>inherit</em> bean definition profiles defined by a
-	 * test superclass. Specifically, the bean definition profiles for a test
-	 * class will be appended to the list of bean definition profiles
-	 * defined by a test superclass. Thus, subclasses have the option of
-	 * <em>extending</em> the list of bean definition profiles.
-	 * <p>If {@code inheritProfiles} is set to {@code false}, the bean
-	 * definition profiles for the test class will <em>shadow</em> and
-	 * effectively replace any bean definition profiles defined by a superclass.
+	 * Whether bean definition profiles from superclasses and enclosing
+	 * classes should be <em>inherited</em>.
+	 * <p>The default value is {@code true}, which means that a test class will
+	 * <em>inherit</em> bean definition profiles defined by a test superclass or
+	 * enclosing class. Specifically, the bean definition profiles for a test
+	 * class will be appended to the list of bean definition profiles defined by
+	 * a test superclass or enclosing class. Thus, subclasses and nested classes
+	 * have the option of <em>extending</em> the list of bean definition profiles.
+	 * <p>If {@code inheritProfiles} is set to {@code false}, the bean definition
+	 * profiles for the test class will <em>shadow</em> and effectively replace
+	 * any bean definition profiles defined by a superclass or enclosing class.
 	 * <p>In the following example, the {@code ApplicationContext} for
 	 * {@code BaseTest} will be loaded using only the &quot;base&quot;
 	 * bean definition profile; beans defined in the &quot;extended&quot; profile

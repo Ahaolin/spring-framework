@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -36,15 +36,15 @@ import javax.servlet.ServletException;
  * follows:
  * <pre class="code">
  * &lt;servlet&gt;
- *   &lt;servlet-name>dispatcher&lt;/servlet-name&gt;
+ *   &lt;servlet-name&gt;dispatcher&lt;/servlet-name&gt;
  *   &lt;servlet-class&gt;
  *     org.springframework.web.servlet.DispatcherServlet
  *   &lt;/servlet-class&gt;
- *   &lt;init-param>
- *     &lt;param-name>contextConfigLocation&lt;/param-name&gt;
- *     &lt;param-value>/WEB-INF/spring/dispatcher-config.xml&lt;/param-value&gt;
+ *   &lt;init-param&gt;
+ *     &lt;param-name&gt;contextConfigLocation&lt;/param-name&gt;
+ *     &lt;param-value&gt;/WEB-INF/spring/dispatcher-config.xml&lt;/param-value&gt;
  *   &lt;/init-param&gt;
- *   &lt;load-on-startup>1&lt;/load-on-startup&gt;
+ *   &lt;load-on-startup&gt;1&lt;/load-on-startup&gt;
  * &lt;/servlet&gt;
  *
  * &lt;servlet-mapping&gt;

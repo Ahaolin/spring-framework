@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2012 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,12 +16,12 @@
 
 package org.springframework.web.servlet.mvc;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.springframework.lang.Nullable;
 import org.springframework.web.servlet.HandlerAdapter;
 import org.springframework.web.servlet.ModelAndView;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * Adapter to use the plain {@link Controller} workflow interface with
@@ -34,14 +34,12 @@ import javax.servlet.http.HttpServletResponse;
  * @author Juergen Hoeller
  * @see org.springframework.web.servlet.DispatcherServlet
  * @see Controller
- * @see LastModified
  * @see HttpRequestHandlerAdapter
  */
 public class SimpleControllerHandlerAdapter implements HandlerAdapter {
 
 	@Override
 	public boolean supports(Object handler) {
-	    // 判断是 Controller 类型
 		return (handler instanceof Controller);
 	}
 
@@ -49,13 +47,13 @@ public class SimpleControllerHandlerAdapter implements HandlerAdapter {
 	@Nullable
 	public ModelAndView handle(HttpServletRequest request, HttpServletResponse response, Object handler)
 			throws Exception {
-	    // Controller 类型的调用
+
 		return ((Controller) handler).handleRequest(request, response);
 	}
 
 	@Override
+	@SuppressWarnings("deprecation")
 	public long getLastModified(HttpServletRequest request, Object handler) {
-	    // 处理器实现了 LastModified 接口的情况下
 		if (handler instanceof LastModified) {
 			return ((LastModified) handler).getLastModified(request);
 		}

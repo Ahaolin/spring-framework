@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,13 +16,33 @@
 
 package org.springframework.web.servlet.mvc.method.annotation;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PushbackInputStream;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
-import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.log.LogFormatUtils;
-import org.springframework.http.*;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpInputMessage;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpRequest;
+import org.springframework.http.InvalidMediaTypeException;
+import org.springframework.http.MediaType;
 import org.springframework.http.converter.GenericHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -31,19 +51,11 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StreamUtils;
 import org.springframework.validation.Errors;
-import org.springframework.validation.annotation.Validated;
+import org.springframework.validation.annotation.ValidationAnnotationUtils;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
-
-import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PushbackInputStream;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Type;
-import java.util.*;
 
 /**
  * A base class for resolving method argument values by reading from the body of
@@ -61,22 +73,13 @@ public abstract class AbstractMessageConverterMethodArgumentResolver implements 
 
 	private static final Object NO_VALUE = new Object();
 
+
 	protected final Log logger = LogFactory.getLog(getClass());
 
-    /**
-     * HttpMessageConverter 数组
-     */
 	protected final List<HttpMessageConverter<?>> messageConverters;
 
-    /**
-     * MediaType 数组
-     */
-	protected final List<MediaType> allSupportedMediaTypes;
-
-    /**
-     * RequestResponseBodyAdviceChain 对象
-     */
 	private final RequestResponseBodyAdviceChain advice;
+
 
 	/**
 	 * Basic constructor with converters only.
@@ -94,23 +97,7 @@ public abstract class AbstractMessageConverterMethodArgumentResolver implements 
 
 		Assert.notEmpty(converters, "'messageConverters' must not be empty");
 		this.messageConverters = converters;
-		this.allSupportedMediaTypes = getAllSupportedMediaTypes(converters);
 		this.advice = new RequestResponseBodyAdviceChain(requestResponseBodyAdvice);
-	}
-
-
-	/**
-	 * Return the media types supported by all provided message converters sorted
-	 * by specificity via {@link MediaType#sortBySpecificity(List)}.
-	 */
-	private static List<MediaType> getAllSupportedMediaTypes(List<HttpMessageConverter<?>> messageConverters) {
-		Set<MediaType> allSupportedMediaTypes = new LinkedHashSet<>();
-		for (HttpMessageConverter<?> messageConverter : messageConverters) {
-			allSupportedMediaTypes.addAll(messageConverter.getSupportedMediaTypes());
-		}
-		List<MediaType> result = new ArrayList<>(allSupportedMediaTypes);
-		MediaType.sortBySpecificity(result);
-		return Collections.unmodifiableList(result);
 	}
 
 
@@ -182,7 +169,7 @@ public abstract class AbstractMessageConverterMethodArgumentResolver implements 
 		HttpMethod httpMethod = (inputMessage instanceof HttpRequest ? ((HttpRequest) inputMessage).getMethod() : null);
 		Object body = NO_VALUE;
 
-		EmptyBodyCheckingHttpInputMessage message;
+		EmptyBodyCheckingHttpInputMessage message = null;
 		try {
 			message = new EmptyBodyCheckingHttpInputMessage(inputMessage);
 
@@ -209,13 +196,19 @@ public abstract class AbstractMessageConverterMethodArgumentResolver implements 
 		catch (IOException ex) {
 			throw new HttpMessageNotReadableException("I/O error while reading input message", ex, inputMessage);
 		}
+		finally {
+			if (message != null && message.hasBody()) {
+				closeStreamIfNecessary(message.getBody());
+			}
+		}
 
 		if (body == NO_VALUE) {
 			if (httpMethod == null || !SUPPORTED_METHODS.contains(httpMethod) ||
 					(noContentType && !message.hasBody())) {
 				return null;
 			}
-			throw new HttpMediaTypeNotSupportedException(contentType, this.allSupportedMediaTypes);
+			throw new HttpMediaTypeNotSupportedException(contentType,
+					getSupportedMediaTypes(targetClass != null ? targetClass : Object.class));
 		}
 
 		MediaType selectedContentType = contentType;
@@ -252,10 +245,8 @@ public abstract class AbstractMessageConverterMethodArgumentResolver implements 
 	protected void validateIfApplicable(WebDataBinder binder, MethodParameter parameter) {
 		Annotation[] annotations = parameter.getParameterAnnotations();
 		for (Annotation ann : annotations) {
-			Validated validatedAnn = AnnotationUtils.getAnnotation(ann, Validated.class);
-			if (validatedAnn != null || ann.annotationType().getSimpleName().startsWith("Valid")) {
-				Object hints = (validatedAnn != null ? validatedAnn.value() : AnnotationUtils.getValue(ann));
-				Object[] validationHints = (hints instanceof Object[] ? (Object[]) hints : new Object[] {hints});
+			Object[] validationHints = ValidationAnnotationUtils.determineValidationHints(ann);
+			if (validationHints != null) {
 				binder.validate(validationHints);
 				break;
 			}
@@ -277,6 +268,21 @@ public abstract class AbstractMessageConverterMethodArgumentResolver implements 
 	}
 
 	/**
+	 * Return the media types supported by all provided message converters sorted
+	 * by specificity via {@link MediaType#sortBySpecificity(List)}.
+	 * @since 5.3.4
+	 */
+	protected List<MediaType> getSupportedMediaTypes(Class<?> clazz) {
+		Set<MediaType> mediaTypeSet = new LinkedHashSet<>();
+		for (HttpMessageConverter<?> converter : this.messageConverters) {
+			mediaTypeSet.addAll(converter.getSupportedMediaTypes(clazz));
+		}
+		List<MediaType> result = new ArrayList<>(mediaTypeSet);
+		MediaType.sortBySpecificity(result);
+		return result;
+	}
+
+	/**
 	 * Adapt the given argument against the method parameter, if necessary.
 	 * @param arg the resolved argument
 	 * @param parameter the method parameter descriptor
@@ -295,6 +301,15 @@ public abstract class AbstractMessageConverterMethodArgumentResolver implements 
 			}
 		}
 		return arg;
+	}
+
+	/**
+	 * Allow for closing the body stream if necessary,
+	 * e.g. for part streams in a multipart request.
+	 */
+	void closeStreamIfNecessary(InputStream body) {
+		// No-op by default: A standard HttpInputMessage exposes the HTTP request stream
+		// (ServletRequest#getInputStream), with its lifecycle managed by the container.
 	}
 
 

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,7 @@
 package org.springframework.util.xml;
 
 import java.util.Iterator;
+
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.namespace.QName;
 import javax.xml.stream.Location;
@@ -34,7 +35,7 @@ import org.springframework.lang.Nullable;
 /**
  * Implementation of the {@link javax.xml.stream.XMLStreamReader} interface that wraps a
  * {@link XMLEventReader}. Useful because the StAX {@link javax.xml.stream.XMLInputFactory}
- * allows one to create a event reader from a stream reader, but not vice-versa.
+ * allows one to create an event reader from a stream reader, but not vice-versa.
  *
  * @author Arjen Poutsma
  * @since 3.0

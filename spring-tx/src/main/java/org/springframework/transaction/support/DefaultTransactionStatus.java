@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,8 +22,6 @@ import org.springframework.transaction.SavepointManager;
 import org.springframework.util.Assert;
 
 /**
- * 默认事务状态实现类
- *
  * Default implementation of the {@link org.springframework.transaction.TransactionStatus}
  * interface, used by {@link AbstractPlatformTransactionManager}. Based on the concept
  * of an underlying "transaction object".
@@ -52,32 +50,17 @@ import org.springframework.util.Assert;
  */
 public class DefaultTransactionStatus extends AbstractTransactionStatus {
 
-    /**
-     * 事务
-     */
 	@Nullable
 	private final Object transaction;
 
-    /**
-     * 是否是新的事务
-     */
 	private final boolean newTransaction;
 
-    /**
-     * 是否新的同步
-     */
 	private final boolean newSynchronization;
 
-    /**
-     * 是否只读
-     */
 	private final boolean readOnly;
 
 	private final boolean debug;
 
-    /**
-     * 对应的挂起资源（一般来说，是挂起的事务）
-     */
 	@Nullable
 	private final Object suspendedResources;
 
@@ -183,18 +166,6 @@ public class DefaultTransactionStatus extends AbstractTransactionStatus {
 	}
 
 	/**
-	 * Delegate the flushing to the transaction object, provided that the latter
-	 * implements the {@link SmartTransactionObject} interface.
-	 * @see SmartTransactionObject#flush()
-	 */
-	@Override
-	public void flush() {
-		if (this.transaction instanceof SmartTransactionObject) {
-			((SmartTransactionObject) this.transaction).flush();
-		}
-	}
-
-	/**
 	 * This implementation exposes the {@link SavepointManager} interface
 	 * of the underlying transaction object, if any.
 	 * @throws NestedTransactionNotSupportedException if savepoints are not supported
@@ -218,6 +189,18 @@ public class DefaultTransactionStatus extends AbstractTransactionStatus {
 	 */
 	public boolean isTransactionSavepointManager() {
 		return (this.transaction instanceof SavepointManager);
+	}
+
+	/**
+	 * Delegate the flushing to the transaction object, provided that the latter
+	 * implements the {@link SmartTransactionObject} interface.
+	 * @see SmartTransactionObject#flush()
+	 */
+	@Override
+	public void flush() {
+		if (this.transaction instanceof SmartTransactionObject) {
+			((SmartTransactionObject) this.transaction).flush();
+		}
 	}
 
 }

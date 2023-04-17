@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,7 @@ package org.springframework.web.servlet.i18n;
 
 import java.util.Locale;
 import java.util.TimeZone;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -27,7 +28,9 @@ import org.springframework.web.servlet.LocaleContextResolver;
 
 /**
  * Abstract base class for {@link LocaleContextResolver} implementations.
- * Provides support for a default locale and a default time zone.
+ *
+ * <p>Provides support for a {@linkplain #setDefaultLocale(Locale) default locale}
+ * and a {@linkplain #setDefaultTimeZone(TimeZone) default time zone}.
  *
  * <p>Also provides pre-implemented versions of {@link #resolveLocale} and {@link #setLocale},
  * delegating to {@link #resolveLocaleContext} and {@link #setLocaleContext}.
@@ -44,14 +47,16 @@ public abstract class AbstractLocaleContextResolver extends AbstractLocaleResolv
 
 
 	/**
-	 * Set a default TimeZone that this resolver will return if no other time zone found.
+	 * Set a default {@link TimeZone} that this resolver will return if no other
+	 * time zone is found.
 	 */
 	public void setDefaultTimeZone(@Nullable TimeZone defaultTimeZone) {
 		this.defaultTimeZone = defaultTimeZone;
 	}
 
 	/**
-	 * Return the default TimeZone that this resolver is supposed to fall back to, if any.
+	 * Get the default {@link TimeZone} that this resolver is supposed to fall
+	 * back to, if any.
 	 */
 	@Nullable
 	public TimeZone getDefaultTimeZone() {

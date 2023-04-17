@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,6 +22,7 @@ import java.lang.reflect.Method;
 import org.springframework.aop.ClassFilter;
 import org.springframework.aop.IntroductionAwareMethodMatcher;
 import org.springframework.aop.MethodMatcher;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -34,6 +35,7 @@ import org.springframework.util.Assert;
  * @author Rod Johnson
  * @author Rob Harrop
  * @author Juergen Hoeller
+ * @author Sam Brannen
  * @since 11.11.2003
  * @see ClassFilters
  * @see Pointcuts
@@ -88,7 +90,7 @@ public abstract class MethodMatchers {
 	 * @param targetClass the target class
 	 * @param hasIntroductions {@code true} if the object on whose behalf we are
 	 * asking is the subject on one or more introductions; {@code false} otherwise
-	 * @return whether or not this method matches statically
+	 * @return whether this method matches statically
 	 */
 	public static boolean matches(MethodMatcher mm, Method method, Class<?> targetClass, boolean hasIntroductions) {
 		Assert.notNull(mm, "MethodMatcher must not be null");
@@ -140,7 +142,7 @@ public abstract class MethodMatchers {
 		}
 
 		@Override
-		public boolean equals(Object other) {
+		public boolean equals(@Nullable Object other) {
 			if (this == other) {
 				return true;
 			}
@@ -154,6 +156,11 @@ public abstract class MethodMatchers {
 		@Override
 		public int hashCode() {
 			return 37 * this.mm1.hashCode() + this.mm2.hashCode();
+		}
+
+		@Override
+		public String toString() {
+			return getClass().getName() + ": " + this.mm1 + ", " + this.mm2;
 		}
 	}
 
@@ -207,7 +214,7 @@ public abstract class MethodMatchers {
 		}
 
 		@Override
-		public boolean equals(Object other) {
+		public boolean equals(@Nullable Object other) {
 			if (this == other) {
 				return true;
 			}
@@ -228,6 +235,11 @@ public abstract class MethodMatchers {
 		public int hashCode() {
 			// Allow for matching with regular UnionMethodMatcher by providing same hash...
 			return super.hashCode();
+		}
+
+		@Override
+		public String toString() {
+			return getClass().getName() + ": " + this.cf1 + ", " + this.mm1 + ", " + this.cf2 + ", " + this.mm2;
 		}
 	}
 
@@ -296,7 +308,7 @@ public abstract class MethodMatchers {
 		}
 
 		@Override
-		public boolean equals(Object other) {
+		public boolean equals(@Nullable Object other) {
 			if (this == other) {
 				return true;
 			}
@@ -310,6 +322,11 @@ public abstract class MethodMatchers {
 		@Override
 		public int hashCode() {
 			return 37 * this.mm1.hashCode() + this.mm2.hashCode();
+		}
+
+		@Override
+		public String toString() {
+			return getClass().getName() + ": " + this.mm1 + ", " + this.mm2;
 		}
 	}
 

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -51,11 +51,9 @@ import org.springframework.util.Assert;
  */
 public class ClassPathXmlApplicationContext extends AbstractXmlApplicationContext {
 
-    /**
-     * 配置文件的 Resource 数组
-     */
 	@Nullable
 	private Resource[] configResources;
+
 
 	/**
 	 * Create a new ClassPathXmlApplicationContext for bean-style configuration.
@@ -197,12 +195,10 @@ public class ClassPathXmlApplicationContext extends AbstractXmlApplicationContex
 		super(parent);
 		Assert.notNull(paths, "Path array must not be null");
 		Assert.notNull(clazz, "Class argument must not be null");
-		// 创建 Resource 数组
 		this.configResources = new Resource[paths.length];
 		for (int i = 0; i < paths.length; i++) {
 			this.configResources[i] = new ClassPathResource(paths[i], clazz);
 		}
-		// 加载
 		refresh();
 	}
 

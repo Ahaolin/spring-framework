@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,9 +21,6 @@ import org.w3c.dom.Document;
 import org.springframework.beans.factory.BeanDefinitionStoreException;
 
 /**
- * From 《Spring 源码深度解析》P16 页
- * 定义读取 Document 并注册 BeanDefinition 功能
- *
  * SPI for parsing an XML document that contains Spring bean definitions.
  * Used by {@link XmlBeanDefinitionReader} for actually parsing a DOM document.
  *

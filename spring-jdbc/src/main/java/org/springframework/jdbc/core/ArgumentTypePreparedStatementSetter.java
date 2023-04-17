@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -87,7 +87,7 @@ public class ArgumentTypePreparedStatementSetter implements PreparedStatementSet
 
 	/**
 	 * Set the value for the prepared statement's specified parameter position using the passed in
-	 * value and type. This method can be overridden by sub-classes if needed.
+	 * value and type. This method can be overridden by subclasses if needed.
 	 * @param ps the PreparedStatement
 	 * @param parameterPosition index of the parameter position
 	 * @param argType the argument type

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,7 @@
 package org.springframework.jms.listener.endpoint;
 
 import java.util.Map;
+
 import javax.jms.JMSException;
 import javax.jms.Queue;
 import javax.jms.Session;
@@ -191,8 +192,8 @@ public class StandardJmsActivationSpecFactory implements JmsActivationSpecFactor
 	 * case of {@code CLIENT_ACKNOWLEDGE} or {@code SESSION_TRANSACTED}
 	 * having been requested.
 	 * @param bw the BeanWrapper wrapping the ActivationSpec object
-	 * @param ackMode the configured acknowledge mode
-	 * (according to the constants in {@link javax.jms.Session}
+	 * @param ackMode the configured acknowledgment mode
+	 * (according to the constants in {@link javax.jms.Session})
 	 * @see javax.jms.Session#AUTO_ACKNOWLEDGE
 	 * @see javax.jms.Session#DUPS_OK_ACKNOWLEDGE
 	 * @see javax.jms.Session#CLIENT_ACKNOWLEDGE

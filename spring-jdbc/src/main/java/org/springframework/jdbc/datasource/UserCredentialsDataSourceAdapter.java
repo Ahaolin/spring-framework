@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -48,7 +48,7 @@ import org.springframework.util.StringUtils;
  *   &lt;property name="targetDataSource" ref="myTargetDataSource"/&gt;
  *   &lt;property name="username" value="myusername"/&gt;
  *   &lt;property name="password" value="mypassword"/&gt;
- * &lt;/bean></pre>
+ * &lt;/bean&gt;</pre>
  *
  * <p>If the "username" is empty, this proxy will simply delegate to the
  * standard {@code getConnection()} method of the target DataSource.
@@ -122,7 +122,7 @@ public class UserCredentialsDataSourceAdapter extends DelegatingDataSource {
 
 
 	/**
-	 * Set user credententials for this proxy and the current thread.
+	 * Set user credentials for this proxy and the current thread.
 	 * The given username and password will be applied to all subsequent
 	 * {@code getConnection()} calls on this DataSource proxy.
 	 * <p>This will override any statically specified user credentials,
@@ -148,9 +148,10 @@ public class UserCredentialsDataSourceAdapter extends DelegatingDataSource {
 	/**
 	 * Determine whether there are currently thread-bound credentials,
 	 * using them if available, falling back to the statically specified
-	 * username and password (i.e. values of the bean properties) else.
+	 * username and password (i.e. values of the bean properties) otherwise.
 	 * <p>Delegates to {@link #doGetConnection(String, String)} with the
 	 * determined credentials as parameters.
+	 * @see #doGetConnection
 	 */
 	@Override
 	public Connection getConnection() throws SQLException {
@@ -208,7 +209,7 @@ public class UserCredentialsDataSourceAdapter extends DelegatingDataSource {
 
 		public final String password;
 
-		private JdbcUserCredentials(String username, String password) {
+		public JdbcUserCredentials(String username, String password) {
 			this.username = username;
 			this.password = password;
 		}

@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +19,7 @@ package org.springframework.messaging.simp;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
@@ -32,9 +33,9 @@ import org.springframework.util.CollectionUtils;
  * A base class for working with message headers in simple messaging protocols that
  * support basic messaging patterns. Provides uniform access to specific values common
  * across protocols such as a destination, message type (e.g. publish, subscribe, etc),
- * session id, and others.
+ * session ID, and others.
  *
- * <p>Use one of the static factory method in this class, then call getters and setters,
+ * <p>Use one of the static factory methods in this class, then call getters and setters,
  * and at the end if necessary call {@link #toMap()} to obtain the updated headers.
  *
  * @author Rossen Stoyanchev
@@ -84,9 +85,14 @@ public class SimpMessageHeaderAccessor extends NativeMessageHeaderAccessor {
 	public static final String IGNORE_ERROR = "simpIgnoreError";
 
 
+	@Nullable
+	private Consumer<Principal> userCallback;
+
+
 	/**
 	 * A constructor for creating new message headers.
-	 * This constructor is protected. See factory methods in this and sub-classes.
+	 * <p>This constructor is protected. See factory methods in this class
+	 * and subclasses.
 	 */
 	protected SimpMessageHeaderAccessor(SimpMessageType messageType,
 			@Nullable Map<String, List<String>> externalSourceHeaders) {
@@ -98,8 +104,9 @@ public class SimpMessageHeaderAccessor extends NativeMessageHeaderAccessor {
 	}
 
 	/**
-	 * A constructor for accessing and modifying existing message headers. This
-	 * constructor is protected. See factory methods in this and sub-classes.
+	 * A constructor for accessing and modifying existing message headers.
+	 * <p>This constructor is protected. See factory methods in this class
+	 * and subclasses.
 	 */
 	protected SimpMessageHeaderAccessor(Message<?> message) {
 		super(message);
@@ -171,6 +178,9 @@ public class SimpMessageHeaderAccessor extends NativeMessageHeaderAccessor {
 
 	public void setUser(@Nullable Principal principal) {
 		setHeader(USER_HEADER, principal);
+		if (this.userCallback != null) {
+			this.userCallback.accept(principal);
+		}
 	}
 
 	/**
@@ -181,6 +191,18 @@ public class SimpMessageHeaderAccessor extends NativeMessageHeaderAccessor {
 		return (Principal) getHeader(USER_HEADER);
 	}
 
+	/**
+	 * Provide a callback to be invoked if and when {@link #setUser(Principal)}
+	 * is called. This is used internally on the inbound channel to detect
+	 * token-based authentications through an interceptor.
+	 * @param callback the callback to invoke
+	 * @since 5.1.9
+	 */
+	public void setUserChangeCallback(Consumer<Principal> callback) {
+		Assert.notNull(callback, "'callback' is required");
+		this.userCallback = this.userCallback != null ? this.userCallback.andThen(callback) : callback;
+	}
+
 	@Override
 	public String getShortLogMessage(Object payload) {
 		if (getMessageType() == null) {
@@ -188,7 +210,7 @@ public class SimpMessageHeaderAccessor extends NativeMessageHeaderAccessor {
 		}
 		StringBuilder sb = getBaseLogMessage();
 		if (!CollectionUtils.isEmpty(getSessionAttributes())) {
-			sb.append(" attributes[").append(getSessionAttributes().size()).append("]");
+			sb.append(" attributes[").append(getSessionAttributes().size()).append(']');
 		}
 		sb.append(getShortPayloadLogMessage(payload));
 		return sb.toString();

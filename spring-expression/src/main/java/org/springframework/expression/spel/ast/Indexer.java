@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,6 +24,8 @@ import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.StringJoiner;
+import java.util.function.Supplier;
 
 import org.springframework.asm.MethodVisitor;
 import org.springframework.core.convert.TypeDescriptor;
@@ -44,11 +46,12 @@ import org.springframework.util.ReflectionUtils;
 
 /**
  * An Indexer can index into some proceeding structure to access a particular piece of it.
- * Supported structures are: strings / collections (lists/sets) / arrays.
+ * <p>Supported structures are: strings / collections (lists/sets) / arrays.
  *
  * @author Andy Clement
  * @author Phillip Webb
  * @author Stephane Nicoll
+ * @author Sam Brannen
  * @since 3.0
  */
 // TODO support multidimensional arrays
@@ -90,8 +93,8 @@ public class Indexer extends SpelNodeImpl {
 	private IndexedType indexedType;
 
 
-	public Indexer(int pos, SpelNodeImpl expr) {
-		super(pos, expr);
+	public Indexer(int startPos, int endPos, SpelNodeImpl expr) {
+		super(startPos, endPos, expr);
 	}
 
 
@@ -101,8 +104,12 @@ public class Indexer extends SpelNodeImpl {
 	}
 
 	@Override
-	public void setValue(ExpressionState state, @Nullable Object newValue) throws EvaluationException {
-		getValueRef(state).setValue(newValue);
+	public TypedValue setValueInternal(ExpressionState state, Supplier<TypedValue> valueSupplier)
+			throws EvaluationException {
+
+		TypedValue typedValue = valueSupplier.get();
+		getValueRef(state).setValue(typedValue.getValue());
+		return typedValue;
 	}
 
 	@Override
@@ -320,15 +327,11 @@ public class Indexer extends SpelNodeImpl {
 
 	@Override
 	public String toStringAST() {
-		StringBuilder sb = new StringBuilder("[");
+		StringJoiner sj = new StringJoiner(",", "[", "]");
 		for (int i = 0; i < getChildCount(); i++) {
-			if (i > 0) {
-				sb.append(",");
-			}
-			sb.append(getChild(i).toStringAST());
+			sj.add(getChild(i).toStringAST());
 		}
-		sb.append("]");
-		return sb.toString();
+		return sj.toString();
 	}
 
 
@@ -442,7 +445,7 @@ public class Indexer extends SpelNodeImpl {
 	}
 
 	private void checkAccess(int arrayLength, int index) throws SpelEvaluationException {
-		if (index > arrayLength) {
+		if (index >= arrayLength) {
 			throw new SpelEvaluationException(getStartPosition(), SpelMessage.ARRAY_INDEX_OUT_OF_BOUNDS,
 					arrayLength, index);
 		}
@@ -639,7 +642,7 @@ public class Indexer extends SpelNodeImpl {
 	}
 
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	private class CollectionIndexingValueRef implements ValueRef {
 
 		private final Collection collection;
@@ -715,16 +718,27 @@ public class Indexer extends SpelNodeImpl {
 				}
 				TypeDescriptor elementType = this.collectionEntryDescriptor.getElementTypeDescriptor();
 				try {
-					Constructor<?> ctor = ReflectionUtils.accessibleConstructor(elementType.getType());
+					Constructor<?> ctor = getDefaultConstructor(elementType.getType());
 					int newElements = this.index - this.collection.size();
 					while (newElements >= 0) {
-						this.collection.add(ctor.newInstance());
+						// Insert a null value if the element type does not have a default constructor.
+						this.collection.add(ctor != null ? ctor.newInstance() : null);
 						newElements--;
 					}
 				}
 				catch (Throwable ex) {
 					throw new SpelEvaluationException(getStartPosition(), ex, SpelMessage.UNABLE_TO_GROW_COLLECTION);
 				}
+			}
+		}
+
+		@Nullable
+		private Constructor<?> getDefaultConstructor(Class<?> type) {
+			try {
+				return ReflectionUtils.accessibleConstructor(type);
+			}
+			catch (Throwable ex) {
+				return null;
 			}
 		}
 

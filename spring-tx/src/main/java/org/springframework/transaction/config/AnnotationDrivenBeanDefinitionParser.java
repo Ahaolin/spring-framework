@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -60,18 +60,17 @@ class AnnotationDrivenBeanDefinitionParser implements BeanDefinitionParser {
 	@Override
 	@Nullable
 	public BeanDefinition parse(Element element, ParserContext parserContext) {
-	    // 注册 {@link TransactionalEventListenerFactory} 的 BeanDefinition 对象
 		registerTransactionalEventListenerFactory(parserContext);
-		// 获得 mode 属性。根据不同的 mode ，执行不同的逻辑处理。
 		String mode = element.getAttribute("mode");
-		if ("aspectj".equals(mode)) { // mode="aspectj" TODO 芋艿 transaction
-		    // 注册
+		if ("aspectj".equals(mode)) {
+			// mode="aspectj"
 			registerTransactionAspect(element, parserContext);
-			//
 			if (ClassUtils.isPresent("javax.transaction.Transactional", getClass().getClassLoader())) {
 				registerJtaTransactionAspect(element, parserContext);
 			}
-		} else { // mode="proxy"
+		}
+		else {
+			// mode="proxy"
 			AopAutoProxyConfigurer.configureAutoProxyCreator(element, parserContext);
 		}
 		return null;
@@ -106,11 +105,6 @@ class AnnotationDrivenBeanDefinitionParser implements BeanDefinitionParser {
 				TxNamespaceHandler.getTransactionManagerName(element));
 	}
 
-    /**
-     * 注册 {@link TransactionalEventListenerFactory} 的 BeanDefinition 对象
-     *
-     * @param parserContext 解析上下文
-     */
 	private void registerTransactionalEventListenerFactory(ParserContext parserContext) {
 		RootBeanDefinition def = new RootBeanDefinition();
 		def.setBeanClass(TransactionalEventListenerFactory.class);
@@ -125,7 +119,6 @@ class AnnotationDrivenBeanDefinitionParser implements BeanDefinitionParser {
 	private static class AopAutoProxyConfigurer {
 
 		public static void configureAutoProxyCreator(Element element, ParserContext parserContext) {
-		    // 注册 InfrastructureAdvisorAutoProxyCreator 的 BeanDefinition 。关于它，点进 InfrastructureAdvisorAutoProxyCreator 类的注释里面看看。
 			AopNamespaceUtils.registerAutoProxyCreatorIfNecessary(parserContext, element);
 
 			String txAdvisorBeanName = TransactionManagementConfigUtils.TRANSACTION_ADVISOR_BEAN_NAME;
@@ -133,7 +126,6 @@ class AnnotationDrivenBeanDefinitionParser implements BeanDefinitionParser {
 				Object eleSource = parserContext.extractSource(element);
 
 				// Create the TransactionAttributeSource definition.
-                // 注册 AnnotationTransactionAttributeSource 的 BeanDefinition ，开启对 @Transactional 注解的扫描
 				RootBeanDefinition sourceDef = new RootBeanDefinition(
 						"org.springframework.transaction.annotation.AnnotationTransactionAttributeSource");
 				sourceDef.setSource(eleSource);
@@ -141,7 +133,6 @@ class AnnotationDrivenBeanDefinitionParser implements BeanDefinitionParser {
 				String sourceName = parserContext.getReaderContext().registerWithGeneratedName(sourceDef);
 
 				// Create the TransactionInterceptor definition.
-                // 注册 TransactionInterceptor 的 BeanDefinition
 				RootBeanDefinition interceptorDef = new RootBeanDefinition(TransactionInterceptor.class);
 				interceptorDef.setSource(eleSource);
 				interceptorDef.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
@@ -150,7 +141,6 @@ class AnnotationDrivenBeanDefinitionParser implements BeanDefinitionParser {
 				String interceptorName = parserContext.getReaderContext().registerWithGeneratedName(interceptorDef);
 
 				// Create the TransactionAttributeSourceAdvisor definition.
-                // 注册 TransactionAttributeSourceAdvisor 的 BeanDefinition
 				RootBeanDefinition advisorDef = new RootBeanDefinition(BeanFactoryTransactionAttributeSourceAdvisor.class);
 				advisorDef.setSource(eleSource);
 				advisorDef.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
@@ -161,7 +151,6 @@ class AnnotationDrivenBeanDefinitionParser implements BeanDefinitionParser {
 				}
 				parserContext.getRegistry().registerBeanDefinition(txAdvisorBeanName, advisorDef);
 
-				// 注册 CompositeComponentDefinition 的 BeanDefinition
 				CompositeComponentDefinition compositeDef = new CompositeComponentDefinition(element.getTagName(), eleSource);
 				compositeDef.addNestedComponent(new BeanComponentDefinition(sourceDef, sourceName));
 				compositeDef.addNestedComponent(new BeanComponentDefinition(interceptorDef, interceptorName));
@@ -169,7 +158,6 @@ class AnnotationDrivenBeanDefinitionParser implements BeanDefinitionParser {
 				parserContext.registerComponent(compositeDef);
 			}
 		}
-
 	}
 
 }

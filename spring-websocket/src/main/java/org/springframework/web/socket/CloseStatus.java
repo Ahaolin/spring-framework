@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,6 +15,8 @@
  */
 
 package org.springframework.web.socket;
+
+import java.io.Serializable;
 
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
@@ -30,7 +32,10 @@ import org.springframework.util.ObjectUtils;
  * @author Rossen Stoyanchev
  * @since 4.0
  */
-public final class CloseStatus {
+public final class CloseStatus implements Serializable {
+
+	private static final long serialVersionUID = 5199057709285570947L;
+
 
 	/**
 	 * "1000 indicates a normal closure, meaning that the purpose for which the connection
@@ -134,7 +139,7 @@ public final class CloseStatus {
 	public static final CloseStatus TLS_HANDSHAKE_FAILURE = new CloseStatus(1015);
 
 	/**
-	 * A status code for use within the framework the indicate a session has
+	 * A status code for use within the framework that indicates a session has
 	 * become unreliable (e.g. timed out while sending a message) and extra
 	 * care should be exercised, e.g. avoid sending any further data to the
 	 * client that may be done during normal shutdown.
@@ -163,7 +168,7 @@ public final class CloseStatus {
 	 * @param reason the reason
 	 */
 	public CloseStatus(int code, @Nullable String reason) {
-		Assert.isTrue((code >= 1000 && code < 5000), "Invalid status code");
+		Assert.isTrue((code >= 1000 && code < 5000), () -> "Invalid status code: " + code);
 		this.code = code;
 		this.reason = reason;
 	}
@@ -200,7 +205,7 @@ public final class CloseStatus {
 	}
 
 	@Override
-	public boolean equals(Object other) {
+	public boolean equals(@Nullable Object other) {
 		if (this == other) {
 			return true;
 		}

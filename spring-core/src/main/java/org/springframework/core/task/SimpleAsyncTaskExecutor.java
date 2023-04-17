@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -126,6 +126,11 @@ public class SimpleAsyncTaskExecutor extends CustomizableThreadCreator
 	 * execution callback (which may be a wrapper around the user-supplied task).
 	 * <p>The primary use case is to set some execution context around the task's
 	 * invocation, or to provide some monitoring/statistics for task execution.
+	 * <p><b>NOTE:</b> Exception handling in {@code TaskDecorator} implementations
+	 * is limited to plain {@code Runnable} execution via {@code execute} calls.
+	 * In case of {@code #submit} calls, the exposed {@code Runnable} will be a
+	 * {@code FutureTask} which does not propagate any exceptions; you might
+	 * have to cast it and call {@code Future#get} to evaluate exceptions.
 	 * @since 4.3
 	 */
 	public final void setTaskDecorator(TaskDecorator taskDecorator) {
@@ -169,6 +174,7 @@ public class SimpleAsyncTaskExecutor extends CustomizableThreadCreator
 	 * if configured (through the superclass's settings).
 	 * @see #doExecute(Runnable)
 	 */
+	@SuppressWarnings("deprecation")
 	@Override
 	public void execute(Runnable task) {
 		execute(task, TIMEOUT_INDEFINITE);
@@ -183,6 +189,7 @@ public class SimpleAsyncTaskExecutor extends CustomizableThreadCreator
 	 * @see #TIMEOUT_IMMEDIATE
 	 * @see #doExecute(Runnable)
 	 */
+	@Deprecated
 	@Override
 	public void execute(Runnable task, long startTimeout) {
 		Assert.notNull(task, "Runnable must not be null");
@@ -196,6 +203,7 @@ public class SimpleAsyncTaskExecutor extends CustomizableThreadCreator
 		}
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public Future<?> submit(Runnable task) {
 		FutureTask<Object> future = new FutureTask<>(task, null);
@@ -203,6 +211,7 @@ public class SimpleAsyncTaskExecutor extends CustomizableThreadCreator
 		return future;
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public <T> Future<T> submit(Callable<T> task) {
 		FutureTask<T> future = new FutureTask<>(task);
@@ -210,6 +219,7 @@ public class SimpleAsyncTaskExecutor extends CustomizableThreadCreator
 		return future;
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public ListenableFuture<?> submitListenable(Runnable task) {
 		ListenableFutureTask<Object> future = new ListenableFutureTask<>(task, null);
@@ -217,6 +227,7 @@ public class SimpleAsyncTaskExecutor extends CustomizableThreadCreator
 		return future;
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public <T> ListenableFuture<T> submitListenable(Callable<T> task) {
 		ListenableFutureTask<T> future = new ListenableFutureTask<>(task);

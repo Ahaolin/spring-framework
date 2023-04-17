@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -126,14 +126,12 @@ public abstract class AutoProxyUtils {
 	 * @see AutowireCapableBeanFactory#ORIGINAL_INSTANCE_SUFFIX
 	 */
 	static boolean isOriginalInstance(String beanName, Class<?> beanClass) {
-	    // 通过 beanName 的长度判断
 		if (!StringUtils.hasLength(beanName) || beanName.length() !=
 				beanClass.getName().length() + AutowireCapableBeanFactory.ORIGINAL_INSTANCE_SUFFIX.length()) {
 			return false;
 		}
-		// 通过 beanName 的内容判断
 		return (beanName.startsWith(beanClass.getName()) &&
-				beanName.endsWith(AutowireCapableBeanFactory.ORIGINAL_INSTANCE_SUFFIX)); // 以 .ORIGINAL 结尾
+				beanName.endsWith(AutowireCapableBeanFactory.ORIGINAL_INSTANCE_SUFFIX));
 	}
 
 }

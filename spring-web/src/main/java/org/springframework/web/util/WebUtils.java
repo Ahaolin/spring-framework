@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,6 +24,7 @@ import java.util.Enumeration;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
+
 import javax.servlet.ServletContext;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletRequestWrapper;
@@ -590,7 +591,7 @@ public abstract class WebUtils {
 	 * either via a button (directly with name) or via an image (name + ".x" or
 	 * name + ".y").
 	 * @param request current HTTP request
-	 * @param name name of the parameter
+	 * @param name the name of the parameter
 	 * @return if the parameter was sent
 	 * @see #SUBMIT_IMAGE_SUFFIXES
 	 */
@@ -627,17 +628,17 @@ public abstract class WebUtils {
 	 * following algorithm:
 	 * <ol>
 	 * <li>Try to get the parameter value using just the given <i>logical</i> name.
-	 * This handles parameters of the form <tt>logicalName = value</tt>. For normal
+	 * This handles parameters of the form {@code logicalName = value}. For normal
 	 * parameters, e.g. submitted using a hidden HTML form field, this will return
 	 * the requested value.</li>
 	 * <li>Try to obtain the parameter value from the parameter name, where the
-	 * parameter name in the request is of the form <tt>logicalName_value = xyz</tt>
+	 * parameter name in the request is of the form {@code logicalName_value = xyz}
 	 * with "_" being the configured delimiter. This deals with parameter values
 	 * submitted using an HTML form submit button.</li>
 	 * <li>If the value obtained in the previous step has a ".x" or ".y" suffix,
 	 * remove that. This handles cases where the value was submitted using an
 	 * HTML form image button. In this case the parameter in the request would
-	 * actually be of the form <tt>logicalName_value.x = 123</tt>. </li>
+	 * actually be of the form {@code logicalName_value.x = 123}.</li>
 	 * </ol>
 	 * @param parameters the available parameter map
 	 * @param name the <i>logical</i> name of the request parameter
@@ -695,7 +696,7 @@ public abstract class WebUtils {
 		}
 		while (paramNames != null && paramNames.hasMoreElements()) {
 			String paramName = paramNames.nextElement();
-			if ("".equals(prefix) || paramName.startsWith(prefix)) {
+			if (prefix.isEmpty() || paramName.startsWith(prefix)) {
 				String unprefixed = paramName.substring(prefix.length());
 				String[] values = request.getParameterValues(paramName);
 				if (values == null || values.length == 0) {
@@ -732,6 +733,9 @@ public abstract class WebUtils {
 			int index = pair.indexOf('=');
 			if (index != -1) {
 				String name = pair.substring(0, index);
+				if (name.equalsIgnoreCase("jsessionid")) {
+					continue;
+				}
 				String rawValue = pair.substring(index + 1);
 				for (String value : StringUtils.commaDelimitedListToStringArray(rawValue)) {
 					result.add(name, value);
@@ -753,7 +757,6 @@ public abstract class WebUtils {
 	 * {@code "Forwarded"} and {@code "X-Forwarded-*"} headers that specify the
 	 * client-originated address. Consider using the {@code ForwardedHeaderFilter}
 	 * to extract and use, or to discard such headers.
-	 *
 	 * @return {@code true} if the request origin is valid, {@code false} otherwise
 	 * @since 4.1.5
 	 * @see <a href="https://tools.ietf.org/html/rfc6454">RFC 6454: The Web Origin Concept</a>

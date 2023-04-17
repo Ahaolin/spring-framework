@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,7 +23,9 @@ import reactor.core.publisher.Mono;
 import org.springframework.util.Assert;
 
 /**
- * Represents a function that filters an{@linkplain ExchangeFunction exchange function}.
+ * Represents a function that filters an {@linkplain ExchangeFunction exchange function}.
+ * <p>The filter is executed when a {@code Subscriber} subscribes to the
+ * {@code Publisher} returned by the {@code WebClient}.
  *
  * @author Arjen Poutsma
  * @since 5.0
@@ -37,6 +39,12 @@ public interface ExchangeFilterFunction {
 	 * in the chain, to be invoked via
 	 * {@linkplain ExchangeFunction#exchange(ClientRequest) invoked} in order to
 	 * proceed with the exchange, or not invoked to shortcut the chain.
+	 *
+	 * <p><strong>Note:</strong> When a filter handles the response after the
+	 * call to {@link ExchangeFunction#exchange}, extra care must be taken to
+	 * always consume its content or otherwise propagate it downstream for
+	 * further handling, for example by the {@link WebClient}. Please, see the
+	 * reference documentation for more details on this.
 	 * @param request the current request
 	 * @param next the next exchange function in the chain
 	 * @return the filtered response

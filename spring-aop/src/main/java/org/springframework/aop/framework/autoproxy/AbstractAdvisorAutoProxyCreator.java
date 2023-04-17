@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,8 @@
 
 package org.springframework.aop.framework.autoproxy;
 
+import java.util.List;
+
 import org.springframework.aop.Advisor;
 import org.springframework.aop.TargetSource;
 import org.springframework.aop.support.AopUtils;
@@ -25,22 +27,22 @@ import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
-import java.util.List;
-
 /**
  * Generic auto proxy creator that builds AOP proxies for specific beans
  * based on detected Advisors for each bean.
  *
- * <p>Subclasses must implement the abstract {@link #findCandidateAdvisors()}
- * method to return a list of Advisors applying to any object. Subclasses can
+ * <p>Subclasses may override the {@link #findCandidateAdvisors()} method to
+ * return a custom list of Advisors applying to any object. Subclasses can
  * also override the inherited {@link #shouldSkip} method to exclude certain
  * objects from auto-proxying.
  *
- * <p>Advisors or advices requiring ordering should implement the
+ * <p>Advisors or advices requiring ordering should be annotated with
+ * {@link org.springframework.core.annotation.Order @Order} or implement the
  * {@link org.springframework.core.Ordered} interface. This class sorts
- * Advisors by Ordered order value. Advisors that don't implement the
- * Ordered interface will be considered as unordered; they will appear
- * at the end of the advisor chain in undefined order.
+ * advisors using the {@link AnnotationAwareOrderComparator}. Advisors that are
+ * not annotated with {@code @Order} or don't implement the {@code Ordered}
+ * interface will be considered as unordered; they will appear at the end of the
+ * advisor chain in an undefined order.
  *
  * @author Rod Johnson
  * @author Juergen Hoeller
@@ -51,6 +53,7 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 
 	@Nullable
 	private BeanFactoryAdvisorRetrievalHelper advisorRetrievalHelper;
+
 
 	@Override
 	public void setBeanFactory(BeanFactory beanFactory) {
@@ -66,17 +69,16 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 		this.advisorRetrievalHelper = new BeanFactoryAdvisorRetrievalHelperAdapter(beanFactory);
 	}
 
+
 	@Override
 	@Nullable
 	protected Object[] getAdvicesAndAdvisorsForBean(
 			Class<?> beanClass, String beanName, @Nullable TargetSource targetSource) {
-	    // 获得匹配的 Advisor 增强器
+
 		List<Advisor> advisors = findEligibleAdvisors(beanClass, beanName);
-		// 无匹配，返回 DO_NOT_PROXY
 		if (advisors.isEmpty()) {
 			return DO_NOT_PROXY;
 		}
-		// 有匹配，返回 Advisor 数组
 		return advisors.toArray();
 	}
 
@@ -91,13 +93,9 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 	 * @see #extendAdvisors
 	 */
 	protected List<Advisor> findEligibleAdvisors(Class<?> beanClass, String beanName) {
-	    // 获取所有 Advisor 增强器
 		List<Advisor> candidateAdvisors = findCandidateAdvisors();
-		// 从所有 Advisor 增强器中，寻找匹配的
 		List<Advisor> eligibleAdvisors = findAdvisorsThatCanApply(candidateAdvisors, beanClass, beanName);
-		// 拓展 Advisor 集合。目前实现为空，子类可覆盖实现自定义逻辑
 		extendAdvisors(eligibleAdvisors);
-		// 排序匹配的 Advisor 增强器
 		if (!eligibleAdvisors.isEmpty()) {
 			eligibleAdvisors = sortAdvisors(eligibleAdvisors);
 		}
@@ -114,8 +112,6 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 	}
 
 	/**
-     * 获得 Bean 对象可使用的 Advisor 集合
-     *
 	 * Search the given candidate Advisors to find all Advisors that
 	 * can apply to the specified bean.
 	 * @param candidateAdvisors the candidate Advisors
@@ -126,12 +122,12 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 	 */
 	protected List<Advisor> findAdvisorsThatCanApply(
 			List<Advisor> candidateAdvisors, Class<?> beanClass, String beanName) {
-	    // 设置当前 Proxy Bean 的名字
+
 		ProxyCreationContext.setCurrentProxiedBeanName(beanName);
 		try {
 			return AopUtils.findAdvisorsThatCanApply(candidateAdvisors, beanClass);
-		} finally {
-		    // 清空当前 Proxy Bean 的名字
+		}
+		finally {
 			ProxyCreationContext.setCurrentProxiedBeanName(null);
 		}
 	}
@@ -161,8 +157,6 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 	}
 
 	/**
-     * 拓展 Advisor 集合。目前实现为空，子类可覆盖实现自定义逻辑
-     *
 	 * Extension hook that subclasses can override to register additional Advisors,
 	 * given the sorted Advisors obtained to date.
 	 * <p>The default implementation is empty.

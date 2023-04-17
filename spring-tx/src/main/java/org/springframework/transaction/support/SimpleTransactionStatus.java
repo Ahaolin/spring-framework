@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,10 +17,6 @@
 package org.springframework.transaction.support;
 
 /**
- * 简单的事务状态实现类。
- *
- * 目前看下来，只用于单元测试中。
- *
  * A simple {@link org.springframework.transaction.TransactionStatus}
  * implementation. Derives from {@link AbstractTransactionStatus} and
  * adds an explicit {@link #isNewTransaction() "newTransaction"} flag.

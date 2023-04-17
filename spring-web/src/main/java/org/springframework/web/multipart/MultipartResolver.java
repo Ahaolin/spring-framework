@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,7 +20,7 @@ import javax.servlet.http.HttpServletRequest;
 
 /**
  * A strategy interface for multipart file upload resolution in accordance
- * with <a href="http://www.ietf.org/rfc/rfc1867.txt">RFC 1867</a>.
+ * with <a href="https://www.ietf.org/rfc/rfc1867.txt">RFC 1867</a>.
  * Implementations are typically usable both within an application context
  * and standalone.
  *
@@ -85,8 +85,6 @@ import javax.servlet.http.HttpServletRequest;
 public interface MultipartResolver {
 
 	/**
-     * 是否为 multipart 请求
-     *
 	 * Determine if the given request contains multipart content.
 	 * <p>Will typically check for content type "multipart/form-data", but the actually
 	 * accepted requests might depend on the capabilities of the resolver implementation.
@@ -96,8 +94,6 @@ public interface MultipartResolver {
 	boolean isMultipart(HttpServletRequest request);
 
 	/**
-     * 将 HttpServletRequest 请求封装成 MultipartHttpServletRequest 对象
-     *
 	 * Parse the given HTTP request into multipart files and parameters,
 	 * and wrap the request inside a
 	 * {@link org.springframework.web.multipart.MultipartHttpServletRequest}
@@ -117,11 +113,9 @@ public interface MultipartResolver {
 	MultipartHttpServletRequest resolveMultipart(HttpServletRequest request) throws MultipartException;
 
 	/**
-     * 清理处理 multipart 产生的资源，例如临时文件
-     *
-	 * Cleanup any resources used for the multipart handling,
+	 * Clean up any resources used for the multipart handling,
 	 * like a storage for the uploaded files.
-	 * @param request the request to cleanup resources for
+	 * @param request the request to clean up resources for
 	 */
 	void cleanupMultipart(MultipartHttpServletRequest request);
 

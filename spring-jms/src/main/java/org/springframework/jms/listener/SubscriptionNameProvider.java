@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,12 +18,12 @@ package org.springframework.jms.listener;
 
 /**
  * Interface to be implemented by message listener objects that suggest a specific
- * name for a durable subscription that they might be registered with. Otherwise
+ * name for a durable subscription that they might be registered with. Otherwise,
  * the listener class name will be used as a default subscription name.
  *
  * <p>Applies to {@link javax.jms.MessageListener} objects as well as to
  * {@link SessionAwareMessageListener} objects and plain listener methods
- * (as supported by {@link org.springframework.jms.listener.adapter.MessageListenerAdapter}.
+ * (as supported by {@link org.springframework.jms.listener.adapter.MessageListenerAdapter}).
  *
  * @author Juergen Hoeller
  * @since 2.5.6

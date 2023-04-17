@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -114,7 +114,7 @@ public abstract class AbstractGenericWebContextLoader extends AbstractContextLoa
 
 		validateMergedContextConfiguration(webMergedConfig);
 
-		GenericWebApplicationContext context = new GenericWebApplicationContext();
+		GenericWebApplicationContext context = createContext();
 
 		ApplicationContext parent = mergedConfig.getParentApplicationContext();
 		if (parent != null) {
@@ -142,7 +142,22 @@ public abstract class AbstractGenericWebContextLoader extends AbstractContextLoa
 	 * @since 4.0.4
 	 */
 	protected void validateMergedContextConfiguration(WebMergedContextConfiguration mergedConfig) {
-		/* no-op */
+		// no-op
+	}
+
+	/**
+	 * Factory method for creating the {@link GenericWebApplicationContext} used
+	 * by this {@code ContextLoader}.
+	 * <p>The default implementation creates a {@code GenericWebApplicationContext}
+	 * using the default constructor. This method may be overridden &mdash; for
+	 * example, to use a custom context subclass or to create a
+	 * {@code GenericWebApplicationContext} with a custom
+	 * {@link DefaultListableBeanFactory} implementation.
+	 * @return a newly instantiated {@code GenericWebApplicationContext}
+	 * @since 5.3.23
+	 */
+	protected GenericWebApplicationContext createContext() {
+		return new GenericWebApplicationContext();
 	}
 
 	/**
@@ -181,7 +196,7 @@ public abstract class AbstractGenericWebContextLoader extends AbstractContextLoa
 
 		// If the WebApplicationContext has no parent or the parent is not a WebApplicationContext,
 		// set the current context as the root WebApplicationContext:
-		if (parent == null || (!(parent instanceof WebApplicationContext))) {
+		if (!(parent instanceof WebApplicationContext)) {
 			String resourceBasePath = webMergedConfig.getResourceBasePath();
 			ResourceLoader resourceLoader = (resourceBasePath.startsWith(ResourceLoader.CLASSPATH_URL_PREFIX) ?
 					new DefaultResourceLoader() : new FileSystemResourceLoader());
@@ -260,8 +275,8 @@ public abstract class AbstractGenericWebContextLoader extends AbstractContextLoa
 	 * {@link org.springframework.test.context.SmartContextLoader SmartContextLoader},
 	 * not as a legacy {@link org.springframework.test.context.ContextLoader ContextLoader}.
 	 * Consequently, this method is not supported.
-	 * @see org.springframework.test.context.ContextLoader#loadContext(java.lang.String[])
 	 * @throws UnsupportedOperationException in this implementation
+	 * @see org.springframework.test.context.ContextLoader#loadContext(java.lang.String[])
 	 */
 	@Override
 	public final ApplicationContext loadContext(String... locations) throws Exception {

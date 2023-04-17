@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,21 +16,16 @@
 
 package org.springframework.transaction.interceptor;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.lang.Nullable;
-
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
+import org.springframework.lang.Nullable;
+
 /**
- * 基于 {@link RollbackRuleAttribute} 的事务定义实现类。
- *
  * TransactionAttribute implementation that works out whether a given exception
  * should cause transaction rollback by applying a number of rollback rules,
- * both positive and negative. If no rules are relevant to the exception, it
+ * both positive and negative. If no custom rollback rules apply, this attribute
  * behaves like DefaultTransactionAttribute (rolling back on runtime exceptions).
  *
  * <p>{@link TransactionAttributeEditor} creates objects of this class.
@@ -49,9 +44,6 @@ public class RuleBasedTransactionAttribute extends DefaultTransactionAttribute i
 	/** Prefix for commit-on-exception rules in description strings. */
 	public static final String PREFIX_COMMIT_RULE = "+";
 
-
-	/** Static for optimal serializability. */
-	private static final Log logger = LogFactory.getLog(RuleBasedTransactionAttribute.class);
 
 	@Nullable
 	private List<RollbackRuleAttribute> rollbackRules;
@@ -117,7 +109,7 @@ public class RuleBasedTransactionAttribute extends DefaultTransactionAttribute i
 	 */
 	public List<RollbackRuleAttribute> getRollbackRules() {
 		if (this.rollbackRules == null) {
-			this.rollbackRules = new LinkedList<>();
+			this.rollbackRules = new ArrayList<>();
 		}
 		return this.rollbackRules;
 	}
@@ -131,10 +123,6 @@ public class RuleBasedTransactionAttribute extends DefaultTransactionAttribute i
 	 */
 	@Override
 	public boolean rollbackOn(Throwable ex) {
-		if (logger.isTraceEnabled()) {
-			logger.trace("Applying rules to determine whether transaction should rollback on " + ex);
-		}
-
 		RollbackRuleAttribute winner = null;
 		int deepest = Integer.MAX_VALUE;
 
@@ -148,13 +136,8 @@ public class RuleBasedTransactionAttribute extends DefaultTransactionAttribute i
 			}
 		}
 
-		if (logger.isTraceEnabled()) {
-			logger.trace("Winning rollback rule is: " + winner);
-		}
-
 		// User superclass behavior (rollback on unchecked) if no rule matches.
 		if (winner == null) {
-			logger.trace("No relevant rollback rule found: applying default rules");
 			return super.rollbackOn(ex);
 		}
 

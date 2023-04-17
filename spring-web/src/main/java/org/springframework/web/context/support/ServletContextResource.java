@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+
 import javax.servlet.ServletContext;
 
 import org.springframework.core.io.AbstractFileResolvingResource;
@@ -138,10 +139,15 @@ public class ServletContextResource extends AbstractFileResolvingResource implem
 				return true;
 			}
 			else {
-				return (this.servletContext.getRealPath(this.path) != null);
+				String realPath = this.servletContext.getRealPath(this.path);
+				if (realPath == null) {
+					return false;
+				}
+				File file = new File(realPath);
+				return (file.exists() && file.isFile());
 			}
 		}
-		catch (MalformedURLException ex) {
+		catch (IOException ex) {
 			return false;
 		}
 	}
@@ -236,7 +242,7 @@ public class ServletContextResource extends AbstractFileResolvingResource implem
 	 * This implementation compares the underlying ServletContext resource locations.
 	 */
 	@Override
-	public boolean equals(Object other) {
+	public boolean equals(@Nullable Object other) {
 		if (this == other) {
 			return true;
 		}

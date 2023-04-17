@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,6 +21,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import javax.servlet.ServletContext;
 import javax.websocket.DeploymentException;
 import javax.websocket.server.ServerContainer;
@@ -65,7 +66,7 @@ public class ServerEndpointExporter extends WebApplicationObjectSupport
 	/**
 	 * Explicitly list annotated endpoint types that should be registered on startup. This
 	 * can be done if you wish to turn off a Servlet container's scan for endpoints, which
-	 * goes through all 3rd party jars in the, and rely on Spring configuration instead.
+	 * goes through all 3rd party jars in the classpath, and rely on Spring configuration instead.
 	 * @param annotatedEndpointClasses {@link ServerEndpoint}-annotated types
 	 */
 	public void setAnnotatedEndpointClasses(Class<?>... annotatedEndpointClasses) {

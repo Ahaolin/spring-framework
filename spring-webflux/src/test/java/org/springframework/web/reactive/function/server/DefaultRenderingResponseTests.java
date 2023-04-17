@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,7 @@
 
 package org.springframework.web.reactive.function.server;
 
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -26,7 +27,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -34,19 +35,24 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
-import org.springframework.mock.http.server.reactive.test.MockServerHttpRequest;
-import org.springframework.mock.http.server.reactive.test.MockServerHttpResponse;
-import org.springframework.mock.web.test.server.MockServerWebExchange;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.result.view.AbstractView;
+import org.springframework.web.reactive.result.view.RedirectView;
 import org.springframework.web.reactive.result.view.View;
 import org.springframework.web.reactive.result.view.ViewResolver;
 import org.springframework.web.reactive.result.view.ViewResolverSupport;
 import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.testfixture.http.server.reactive.MockServerHttpRequest;
+import org.springframework.web.testfixture.http.server.reactive.MockServerHttpResponse;
+import org.springframework.web.testfixture.server.MockServerWebExchange;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Arjen Poutsma
@@ -137,14 +143,14 @@ public class DefaultRenderingResponseTests {
 		MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.get("http://localhost"));
 		ViewResolver viewResolver = mock(ViewResolver.class);
 		View view = mock(View.class);
-		when(viewResolver.resolveViewName("view", Locale.ENGLISH)).thenReturn(Mono.just(view));
-		when(view.render(model, null, exchange)).thenReturn(Mono.empty());
+		given(viewResolver.resolveViewName("view", Locale.ENGLISH)).willReturn(Mono.just(view));
+		given(view.render(model, null, exchange)).willReturn(Mono.empty());
 
 		List<ViewResolver> viewResolvers = new ArrayList<>();
 		viewResolvers.add(viewResolver);
 
 		HandlerStrategies mockConfig = mock(HandlerStrategies.class);
-		when(mockConfig.viewResolvers()).thenReturn(viewResolvers);
+		given(mockConfig.viewResolvers()).willReturn(viewResolvers);
 
 		StepVerifier.create(result)
 				.expectNextMatches(response -> "view".equals(response.name()) &&
@@ -154,24 +160,59 @@ public class DefaultRenderingResponseTests {
 	}
 
 	@Test
+	public void writeTo() {
+		Map<String, Object> model = Collections.singletonMap("foo", "bar");
+		RenderingResponse renderingResponse = RenderingResponse.create("view")
+				.status(HttpStatus.FOUND)
+				.modelAttributes(model)
+				.build().block(Duration.of(5, ChronoUnit.MILLIS));
+		assertThat(renderingResponse).isNotNull();
+
+		MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.get("http://localhost"));
+		MediaType contentType = MediaType.APPLICATION_PDF;
+		exchange.getResponse().getHeaders().setContentType(contentType);
+
+		ViewResolver viewResolver = mock(ViewResolver.class);
+		RedirectView view = mock(RedirectView.class);
+		given(viewResolver.resolveViewName(eq("view"), any())).willReturn(Mono.just(view));
+		given(view.render(model, contentType, exchange)).willReturn(Mono.empty());
+
+		List<ViewResolver> viewResolvers = new ArrayList<>();
+		viewResolvers.add(viewResolver);
+
+		HandlerStrategies mockConfig = mock(HandlerStrategies.class);
+		given(mockConfig.viewResolvers()).willReturn(viewResolvers);
+
+		ServerResponse.Context context = mock(ServerResponse.Context.class);
+		given(context.viewResolvers()).willReturn(viewResolvers);
+
+		Mono<Void> result = renderingResponse.writeTo(exchange, context);
+		StepVerifier.create(result)
+				.expectComplete()
+				.verify();
+
+		verify(view).setStatusCode(HttpStatus.FOUND);
+	}
+
+	@Test
 	public void defaultContentType() {
 		Mono<RenderingResponse> result = RenderingResponse.create("view").build();
 
 		MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.get("http://localhost"));
 		TestView view = new TestView();
 		ViewResolver viewResolver = mock(ViewResolver.class);
-		when(viewResolver.resolveViewName(any(), any())).thenReturn(Mono.just(view));
+		given(viewResolver.resolveViewName(any(), any())).willReturn(Mono.just(view));
 
 		List<ViewResolver> viewResolvers = new ArrayList<>();
 		viewResolvers.add(viewResolver);
 
 		ServerResponse.Context context = mock(ServerResponse.Context.class);
-		when(context.viewResolvers()).thenReturn(viewResolvers);
+		given(context.viewResolvers()).willReturn(viewResolvers);
 
 		StepVerifier.create(result.flatMap(response -> response.writeTo(exchange, context)))
 				.verifyComplete();
 
-		assertEquals(ViewResolverSupport.DEFAULT_CONTENT_TYPE, exchange.getResponse().getHeaders().getContentType());
+		assertThat(exchange.getResponse().getHeaders().getContentType()).isEqualTo(ViewResolverSupport.DEFAULT_CONTENT_TYPE);
 	}
 
 
@@ -194,7 +235,7 @@ public class DefaultRenderingResponseTests {
 				.build()
 				.block();
 
-		MockServerHttpRequest request = MockServerHttpRequest.get("http://example.com")
+		MockServerHttpRequest request = MockServerHttpRequest.get("https://example.com")
 				.header(HttpHeaders.IF_NONE_MATCH, etag)
 				.build();
 		MockServerWebExchange exchange = MockServerWebExchange.from(request);
@@ -202,7 +243,7 @@ public class DefaultRenderingResponseTests {
 		responseMono.writeTo(exchange, DefaultServerResponseBuilderTests.EMPTY_CONTEXT);
 
 		MockServerHttpResponse response = exchange.getResponse();
-		assertEquals(HttpStatus.NOT_MODIFIED, response.getStatusCode());
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_MODIFIED);
 		StepVerifier.create(response.getBody())
 				.expectError(IllegalStateException.class)
 				.verify();
@@ -218,7 +259,7 @@ public class DefaultRenderingResponseTests {
 				.build()
 				.block();
 
-		MockServerHttpRequest request = MockServerHttpRequest.get("http://example.com")
+		MockServerHttpRequest request = MockServerHttpRequest.get("https://example.com")
 				.header(HttpHeaders.IF_MODIFIED_SINCE,
 						DateTimeFormatter.RFC_1123_DATE_TIME.format(now))
 				.build();
@@ -227,7 +268,7 @@ public class DefaultRenderingResponseTests {
 		responseMono.writeTo(exchange, DefaultServerResponseBuilderTests.EMPTY_CONTEXT);
 
 		MockServerHttpResponse response = exchange.getResponse();
-		assertEquals(HttpStatus.NOT_MODIFIED, response.getStatusCode());
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_MODIFIED);
 		StepVerifier.create(response.getBody())
 				.expectError(IllegalStateException.class)
 				.verify();

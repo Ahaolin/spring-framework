@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,9 +22,11 @@ import java.util.Map;
 import org.springframework.lang.Nullable;
 
 /**
- * Java-5-specific interface that defines a holder for model attributes.
- * Primarily designed for adding attributes to the model.
- * Allows for accessing the overall model as a {@code java.util.Map}.
+ * Interface that defines a holder for model attributes.
+ *
+ * <p>Primarily designed for adding attributes to the model.
+ *
+ * <p>Allows for accessing the overall model as a {@code java.util.Map}.
  *
  * @author Juergen Hoeller
  * @since 2.5.1
@@ -75,6 +77,15 @@ public interface Model {
 	 * @return whether this model contains a corresponding attribute
 	 */
 	boolean containsAttribute(String attributeName);
+
+	/**
+	 * Return the attribute value for the given name, if any.
+	 * @param attributeName the name of the model attribute (never {@code null})
+	 * @return the corresponding attribute value, or {@code null} if none
+	 * @since 5.2
+	 */
+	@Nullable
+	Object getAttribute(String attributeName);
 
 	/**
 	 * Return the current set of model attributes as a Map.

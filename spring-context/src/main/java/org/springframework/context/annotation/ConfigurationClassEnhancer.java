@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,8 +35,8 @@ import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.beans.factory.support.SimpleInstantiationStrategy;
 import org.springframework.cglib.core.ClassGenerator;
+import org.springframework.cglib.core.ClassLoaderAwareGeneratorStrategy;
 import org.springframework.cglib.core.Constants;
-import org.springframework.cglib.core.DefaultGeneratorStrategy;
 import org.springframework.cglib.core.SpringNamingPolicy;
 import org.springframework.cglib.proxy.Callback;
 import org.springframework.cglib.proxy.CallbackFilter;
@@ -207,13 +207,11 @@ class ConfigurationClassEnhancer {
 	 * Also exposes the application ClassLoader as thread context ClassLoader for the time of
 	 * class generation (in order for ASM to pick it up when doing common superclass resolution).
 	 */
-	private static class BeanFactoryAwareGeneratorStrategy extends DefaultGeneratorStrategy {
-
-		@Nullable
-		private final ClassLoader classLoader;
+	private static class BeanFactoryAwareGeneratorStrategy extends
+			ClassLoaderAwareGeneratorStrategy {
 
 		public BeanFactoryAwareGeneratorStrategy(@Nullable ClassLoader classLoader) {
-			this.classLoader = classLoader;
+			super(classLoader);
 		}
 
 		@Override
@@ -228,36 +226,6 @@ class ConfigurationClassEnhancer {
 			return new TransformingClassGenerator(cg, transformer);
 		}
 
-		@Override
-		public byte[] generate(ClassGenerator cg) throws Exception {
-			if (this.classLoader == null) {
-				return super.generate(cg);
-			}
-
-			Thread currentThread = Thread.currentThread();
-			ClassLoader threadContextClassLoader;
-			try {
-				threadContextClassLoader = currentThread.getContextClassLoader();
-			}
-			catch (Throwable ex) {
-				// Cannot access thread context ClassLoader - falling back...
-				return super.generate(cg);
-			}
-
-			boolean overrideClassLoader = !this.classLoader.equals(threadContextClassLoader);
-			if (overrideClassLoader) {
-				currentThread.setContextClassLoader(this.classLoader);
-			}
-			try {
-				return super.generate(cg);
-			}
-			finally {
-				if (overrideClassLoader) {
-					// Reset original thread context ClassLoader.
-					currentThread.setContextClassLoader(threadContextClassLoader);
-				}
-			}
-		}
 	}
 
 
@@ -393,6 +361,7 @@ class ConfigurationClassEnhancer {
 				Object beanInstance = (useArgs ? beanFactory.getBean(beanName, beanMethodArgs) :
 						beanFactory.getBean(beanName));
 				if (!ClassUtils.isAssignableValue(beanMethod.getReturnType(), beanInstance)) {
+					// Detect package-protected NullBean instance through equals(null) check
 					if (beanInstance.equals(null)) {
 						if (logger.isDebugEnabled()) {
 							logger.debug(String.format("@Bean method %s.%s called as bean reference " +
@@ -484,8 +453,8 @@ class ConfigurationClassEnhancer {
 		 * instance directly. If a FactoryBean instance is fetched through the container via &-dereferencing,
 		 * it will not be proxied. This too is aligned with the way XML configuration works.
 		 */
-		private Object enhanceFactoryBean(final Object factoryBean, Class<?> exposedType,
-				final ConfigurableBeanFactory beanFactory, final String beanName) {
+		private Object enhanceFactoryBean(Object factoryBean, Class<?> exposedType,
+				ConfigurableBeanFactory beanFactory, String beanName) {
 
 			try {
 				Class<?> clazz = factoryBean.getClass();
@@ -520,8 +489,8 @@ class ConfigurationClassEnhancer {
 			return createCglibProxyForFactoryBean(factoryBean, beanFactory, beanName);
 		}
 
-		private Object createInterfaceProxyForFactoryBean(final Object factoryBean, Class<?> interfaceType,
-				final ConfigurableBeanFactory beanFactory, final String beanName) {
+		private Object createInterfaceProxyForFactoryBean(Object factoryBean, Class<?> interfaceType,
+				ConfigurableBeanFactory beanFactory, String beanName) {
 
 			return Proxy.newProxyInstance(
 					factoryBean.getClass().getClassLoader(), new Class<?>[] {interfaceType},
@@ -533,8 +502,8 @@ class ConfigurationClassEnhancer {
 					});
 		}
 
-		private Object createCglibProxyForFactoryBean(final Object factoryBean,
-				final ConfigurableBeanFactory beanFactory, final String beanName) {
+		private Object createCglibProxyForFactoryBean(Object factoryBean,
+				ConfigurableBeanFactory beanFactory, String beanName) {
 
 			Enhancer enhancer = new Enhancer();
 			enhancer.setSuperclass(factoryBean.getClass());

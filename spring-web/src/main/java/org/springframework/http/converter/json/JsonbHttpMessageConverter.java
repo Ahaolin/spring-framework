@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +20,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 import javax.json.bind.JsonbConfig;
@@ -30,7 +31,7 @@ import org.springframework.util.Assert;
 /**
  * Implementation of {@link org.springframework.http.converter.HttpMessageConverter}
  * that can read and write JSON using the
- * <a href="http://json-b.net/">JSON Binding API</a>.
+ * <a href="https://javaee.github.io/jsonb-spec/">JSON Binding API</a>.
  *
  * <p>This converter can be used to bind to typed beans or untyped {@code HashMap}s.
  * By default, it supports {@code application/json} and {@code application/*+json} with
@@ -100,12 +101,12 @@ public class JsonbHttpMessageConverter extends AbstractJsonHttpMessageConverter 
 	}
 
 	@Override
-	protected void writeInternal(Object o, @Nullable Type type, Writer writer) throws Exception {
+	protected void writeInternal(Object object, @Nullable Type type, Writer writer) throws Exception {
 		if (type instanceof ParameterizedType) {
-			getJsonb().toJson(o, type, writer);
+			getJsonb().toJson(object, type, writer);
 		}
 		else {
-			getJsonb().toJson(o, writer);
+			getJsonb().toJson(object, writer);
 		}
 	}
 

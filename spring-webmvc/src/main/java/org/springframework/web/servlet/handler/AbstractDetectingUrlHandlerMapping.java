@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2012 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,10 +33,8 @@ import org.springframework.util.ObjectUtils;
  */
 public abstract class AbstractDetectingUrlHandlerMapping extends AbstractUrlHandlerMapping {
 
-    /**
-     * 是否只扫描可访问的 Handler 们
-     */
 	private boolean detectHandlersInAncestorContexts = false;
+
 
 	/**
 	 * Set whether to detect handler beans in ancestor ApplicationContexts.
@@ -50,15 +48,14 @@ public abstract class AbstractDetectingUrlHandlerMapping extends AbstractUrlHand
 		this.detectHandlersInAncestorContexts = detectHandlersInAncestorContexts;
 	}
 
+
 	/**
 	 * Calls the {@link #detectHandlers()} method in addition to the
 	 * superclass's initialization.
 	 */
 	@Override
 	public void initApplicationContext() throws ApplicationContextException {
-        // 调用父类方法，进行初始化
 		super.initApplicationContext();
-		// 自动探测处理器
 		detectHandlers();
 	}
 
@@ -71,28 +68,28 @@ public abstract class AbstractDetectingUrlHandlerMapping extends AbstractUrlHand
 	 * @see #determineUrlsForHandler(String)
 	 */
 	protected void detectHandlers() throws BeansException {
-	    // 获得 Bean 的名字的数组
 		ApplicationContext applicationContext = obtainApplicationContext();
 		String[] beanNames = (this.detectHandlersInAncestorContexts ?
 				BeanFactoryUtils.beanNamesForTypeIncludingAncestors(applicationContext, Object.class) :
 				applicationContext.getBeanNamesForType(Object.class));
 
 		// Take any bean name that we can determine URLs for.
-        // 遍历 Bean ，逐个注册
 		for (String beanName : beanNames) {
-		    // 获得 Bean 对应的 URL 们
 			String[] urls = determineUrlsForHandler(beanName);
-			// 如果 URL 们非空，则执行注册处理器
 			if (!ObjectUtils.isEmpty(urls)) {
 				// URL paths found: Let's consider it a handler.
 				registerHandler(urls, beanName);
 			}
 		}
 
-		if ((logger.isDebugEnabled() && !getHandlerMap().isEmpty()) || logger.isTraceEnabled()) {
+		if (mappingsLogger.isDebugEnabled()) {
+			mappingsLogger.debug(formatMappingName() + " " + getHandlerMap());
+		}
+		else if ((logger.isDebugEnabled() && !getHandlerMap().isEmpty()) || logger.isTraceEnabled()) {
 			logger.debug("Detected " + getHandlerMap().size() + " mappings in " + formatMappingName());
 		}
 	}
+
 
 	/**
 	 * Determine the URLs for the given handler bean.

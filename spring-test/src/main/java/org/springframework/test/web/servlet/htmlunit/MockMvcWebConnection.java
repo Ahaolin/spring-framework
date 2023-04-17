@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -40,7 +40,7 @@ import org.springframework.util.Assert;
 /**
  * {@code MockMvcWebConnection} enables {@link MockMvc} to transform a
  * {@link WebRequest} into a {@link WebResponse}.
- * <p>This is the core integration with <a href="http://htmlunit.sourceforge.net/">HtmlUnit</a>.
+ * <p>This is the core integration with <a href="https://htmlunit.sourceforge.io/">HtmlUnit</a>.
  * <p>Example usage can be seen below.
  *
  * <pre class="code">
@@ -63,9 +63,12 @@ public final class MockMvcWebConnection implements WebConnection {
 
 	private final MockMvc mockMvc;
 
+	@Nullable
 	private final String contextPath;
 
 	private WebClient webClient;
+
+	private static int MAX_FORWARDS = 100;
 
 
 	/**
@@ -91,7 +94,7 @@ public final class MockMvcWebConnection implements WebConnection {
 	 * @param webClient the {@link WebClient} to use (never {@code null})
 	 * @param contextPath the contextPath to use
 	 */
-	public MockMvcWebConnection(MockMvc mockMvc, WebClient webClient, String contextPath) {
+	public MockMvcWebConnection(MockMvc mockMvc, WebClient webClient, @Nullable String contextPath) {
 		Assert.notNull(mockMvc, "MockMvc must not be null");
 		Assert.notNull(webClient, "WebClient must not be null");
 		validateContextPath(contextPath);
@@ -110,7 +113,7 @@ public final class MockMvcWebConnection implements WebConnection {
 	 * @param contextPath the path to validate
 	 */
 	static void validateContextPath(@Nullable String contextPath) {
-		if (contextPath == null || "".equals(contextPath)) {
+		if (contextPath == null || contextPath.isEmpty()) {
 			return;
 		}
 		Assert.isTrue(contextPath.startsWith("/"), () -> "contextPath '" + contextPath + "' must start with '/'.");
@@ -124,6 +127,7 @@ public final class MockMvcWebConnection implements WebConnection {
 	}
 
 
+	@Override
 	public WebResponse getResponse(WebRequest webRequest) throws IOException {
 		long startTime = System.currentTimeMillis();
 		HtmlUnitRequestBuilder requestBuilder = new HtmlUnitRequestBuilder(this.sessions, this.webClient, webRequest);
@@ -131,10 +135,15 @@ public final class MockMvcWebConnection implements WebConnection {
 
 		MockHttpServletResponse httpServletResponse = getResponse(requestBuilder);
 		String forwardedUrl = httpServletResponse.getForwardedUrl();
-		while (forwardedUrl != null) {
+		int forwards = 0;
+		while (forwardedUrl != null && forwards < MAX_FORWARDS) {
 			requestBuilder.setForwardPostProcessor(new ForwardRequestPostProcessor(forwardedUrl));
 			httpServletResponse = getResponse(requestBuilder);
 			forwardedUrl = httpServletResponse.getForwardedUrl();
+			forwards += 1;
+		}
+		if (forwards == MAX_FORWARDS) {
+			throw new IllegalStateException("Forwarded more than " + forwards + " times in a row, potential infinite forward loop");
 		}
 		storeCookies(webRequest, httpServletResponse.getCookies());
 

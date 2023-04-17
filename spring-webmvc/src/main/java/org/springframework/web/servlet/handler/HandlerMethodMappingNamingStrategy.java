@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,8 +19,6 @@ package org.springframework.web.servlet.handler;
 import org.springframework.web.method.HandlerMethod;
 
 /**
- * Handler 的 Method 的 Mapping 的名字生成策略接口
- *
  * A strategy for assigning a name to a handler method's mapping.
  *
  * <p>The strategy can be configured on
@@ -44,8 +42,6 @@ import org.springframework.web.method.HandlerMethod;
 public interface HandlerMethodMappingNamingStrategy<T> {
 
 	/**
-     * 获得名字
-     *
 	 * Determine the name for the given HandlerMethod and mapping.
 	 * @param handlerMethod the handler method
 	 * @param mapping the mapping

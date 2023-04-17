@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,10 +24,6 @@ import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.lang.Nullable;
 
 /**
- * <pre>
- *     应用上下文核心接口,各类上下文实现类都是它的实现类
- * </pre>
- *
  * Central interface to provide configuration for an application.
  * This is read-only while the application is running, but may be
  * reloaded if the implementation supports this.
@@ -98,7 +94,7 @@ public interface ApplicationContext extends EnvironmentCapable, ListableBeanFact
 	/**
 	 * Expose AutowireCapableBeanFactory functionality for this context.
 	 * <p>This is not typically used by application code, except for the purpose of
-	 * initializing bean instances that live outside of the application context,
+	 * initializing bean instances that live outside the application context,
 	 * applying the Spring bean lifecycle (fully or partly) to them.
 	 * <p>Alternatively, the internal BeanFactory exposed by the
 	 * {@link ConfigurableApplicationContext} interface offers access to the

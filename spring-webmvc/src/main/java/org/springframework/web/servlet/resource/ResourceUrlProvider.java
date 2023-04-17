@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,12 +21,15 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
@@ -46,13 +49,17 @@ import org.springframework.web.util.UrlPathHelper;
  * {@code ResourceHttpRequestHandler}s to make its decisions.
  *
  * @author Rossen Stoyanchev
+ * @author Brian Clozel
  * @since 4.1
  */
-public class ResourceUrlProvider implements ApplicationListener<ContextRefreshedEvent> {
+public class ResourceUrlProvider implements ApplicationListener<ContextRefreshedEvent>, ApplicationContextAware {
 
 	protected final Log logger = LogFactory.getLog(getClass());
 
-	private UrlPathHelper urlPathHelper = new UrlPathHelper();
+	@Nullable
+	private ApplicationContext applicationContext;
+
+	private UrlPathHelper urlPathHelper = UrlPathHelper.defaultInstance;
 
 	private PathMatcher pathMatcher = new AntPathMatcher();
 
@@ -60,6 +67,11 @@ public class ResourceUrlProvider implements ApplicationListener<ContextRefreshed
 
 	private boolean autodetect = true;
 
+
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = applicationContext;
+	}
 
 	/**
 	 * Configure a {@code UrlPathHelper} to use in
@@ -123,17 +135,17 @@ public class ResourceUrlProvider implements ApplicationListener<ContextRefreshed
 		return this.autodetect;
 	}
 
+
 	@Override
 	public void onApplicationEvent(ContextRefreshedEvent event) {
-		if (isAutodetect()) {
+		if (event.getApplicationContext() == this.applicationContext && isAutodetect()) {
 			this.handlerMap.clear();
-			detectResourceHandlers(event.getApplicationContext());
+			detectResourceHandlers(this.applicationContext);
 			if (!this.handlerMap.isEmpty()) {
 				this.autodetect = false;
 			}
 		}
 	}
-
 
 	protected void detectResourceHandlers(ApplicationContext appContext) {
 		Map<String, SimpleUrlHandlerMapping> beans = appContext.getBeansOfType(SimpleUrlHandlerMapping.class);
@@ -179,8 +191,11 @@ public class ResourceUrlProvider implements ApplicationListener<ContextRefreshed
 
 	private int getLookupPathIndex(HttpServletRequest request) {
 		UrlPathHelper pathHelper = getUrlPathHelper();
+		if (request.getAttribute(UrlPathHelper.PATH_ATTRIBUTE) == null) {
+			pathHelper.resolveAndCacheLookupPath(request);
+		}
 		String requestUri = pathHelper.getRequestUri(request);
-		String lookupPath = pathHelper.getLookupPathForRequest(request);
+		String lookupPath = UrlPathHelper.getResolvedLookupPath(request);
 		return requestUri.indexOf(lookupPath);
 	}
 
@@ -211,7 +226,6 @@ public class ResourceUrlProvider implements ApplicationListener<ContextRefreshed
 	 */
 	@Nullable
 	public final String getForLookupPath(String lookupPath) {
-
 		// Clean duplicate slashes or pathWithinPattern won't match lookupPath
 		String previous;
 		do {

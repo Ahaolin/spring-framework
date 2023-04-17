@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,8 +16,15 @@
 
 package org.springframework.web.servlet.mvc.support;
 
+import java.io.IOException;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import org.springframework.beans.ConversionNotSupportedException;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.core.Ordered;
@@ -46,11 +53,6 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.handler.AbstractHandlerExceptionResolver;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.List;
-
 /**
  * The default implementation of the {@link org.springframework.web.servlet.HandlerExceptionResolver}
  * interface, resolving standard Spring MVC exceptions and translating them to corresponding
@@ -59,7 +61,6 @@ import java.util.List;
  * <p>This exception resolver is enabled by default in the common Spring
  * {@link org.springframework.web.servlet.DispatcherServlet}.
  *
- * <p>
  * <table>
  * <caption>Supported Exceptions</caption>
  * <thead>
@@ -158,7 +159,9 @@ public class DefaultHandlerExceptionResolver extends AbstractHandlerExceptionRes
 	 */
 	public DefaultHandlerExceptionResolver() {
 		setOrder(Ordered.LOWEST_PRECEDENCE);
+		setWarnLogCategory(getClass().getName());
 	}
+
 
 	@Override
 	@Nullable
@@ -169,49 +172,64 @@ public class DefaultHandlerExceptionResolver extends AbstractHandlerExceptionRes
 			if (ex instanceof HttpRequestMethodNotSupportedException) {
 				return handleHttpRequestMethodNotSupported(
 						(HttpRequestMethodNotSupportedException) ex, request, response, handler);
-			} else if (ex instanceof HttpMediaTypeNotSupportedException) {
+			}
+			else if (ex instanceof HttpMediaTypeNotSupportedException) {
 				return handleHttpMediaTypeNotSupported(
 						(HttpMediaTypeNotSupportedException) ex, request, response, handler);
-			} else if (ex instanceof HttpMediaTypeNotAcceptableException) {
+			}
+			else if (ex instanceof HttpMediaTypeNotAcceptableException) {
 				return handleHttpMediaTypeNotAcceptable(
 						(HttpMediaTypeNotAcceptableException) ex, request, response, handler);
-			} else if (ex instanceof MissingPathVariableException) {
+			}
+			else if (ex instanceof MissingPathVariableException) {
 				return handleMissingPathVariable(
 						(MissingPathVariableException) ex, request, response, handler);
-			} else if (ex instanceof MissingServletRequestParameterException) {
+			}
+			else if (ex instanceof MissingServletRequestParameterException) {
 				return handleMissingServletRequestParameter(
 						(MissingServletRequestParameterException) ex, request, response, handler);
-			} else if (ex instanceof ServletRequestBindingException) {
+			}
+			else if (ex instanceof ServletRequestBindingException) {
 				return handleServletRequestBindingException(
 						(ServletRequestBindingException) ex, request, response, handler);
-			} else if (ex instanceof ConversionNotSupportedException) {
+			}
+			else if (ex instanceof ConversionNotSupportedException) {
 				return handleConversionNotSupported(
 						(ConversionNotSupportedException) ex, request, response, handler);
-			} else if (ex instanceof TypeMismatchException) {
+			}
+			else if (ex instanceof TypeMismatchException) {
 				return handleTypeMismatch(
 						(TypeMismatchException) ex, request, response, handler);
-			} else if (ex instanceof HttpMessageNotReadableException) {
+			}
+			else if (ex instanceof HttpMessageNotReadableException) {
 				return handleHttpMessageNotReadable(
 						(HttpMessageNotReadableException) ex, request, response, handler);
-			} else if (ex instanceof HttpMessageNotWritableException) {
+			}
+			else if (ex instanceof HttpMessageNotWritableException) {
 				return handleHttpMessageNotWritable(
 						(HttpMessageNotWritableException) ex, request, response, handler);
-			} else if (ex instanceof MethodArgumentNotValidException) {
+			}
+			else if (ex instanceof MethodArgumentNotValidException) {
 				return handleMethodArgumentNotValidException(
 						(MethodArgumentNotValidException) ex, request, response, handler);
-			} else if (ex instanceof MissingServletRequestPartException) {
+			}
+			else if (ex instanceof MissingServletRequestPartException) {
 				return handleMissingServletRequestPartException(
 						(MissingServletRequestPartException) ex, request, response, handler);
-			} else if (ex instanceof BindException) {
+			}
+			else if (ex instanceof BindException) {
 				return handleBindException((BindException) ex, request, response, handler);
-			} else if (ex instanceof NoHandlerFoundException) {
+			}
+			else if (ex instanceof NoHandlerFoundException) {
 				return handleNoHandlerFoundException(
 						(NoHandlerFoundException) ex, request, response, handler);
-			} else if (ex instanceof AsyncRequestTimeoutException) {
+			}
+			else if (ex instanceof AsyncRequestTimeoutException) {
 				return handleAsyncRequestTimeoutException(
 						(AsyncRequestTimeoutException) ex, request, response, handler);
 			}
-		} catch (Exception handlerEx) {
+		}
+		catch (Exception handlerEx) {
 			if (logger.isWarnEnabled()) {
 				logger.warn("Failure while trying to resolve exception [" + ex.getClass().getName() + "]", handlerEx);
 			}
@@ -259,17 +277,20 @@ public class DefaultHandlerExceptionResolver extends AbstractHandlerExceptionRes
 	protected ModelAndView handleHttpMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex,
 			HttpServletRequest request, HttpServletResponse response, @Nullable Object handler) throws IOException {
 
-		response.sendError(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE);
 		List<MediaType> mediaTypes = ex.getSupportedMediaTypes();
 		if (!CollectionUtils.isEmpty(mediaTypes)) {
 			response.setHeader("Accept", MediaType.toString(mediaTypes));
+			if (request.getMethod().equals("PATCH")) {
+				response.setHeader("Accept-Patch", MediaType.toString(mediaTypes));
+			}
 		}
+		response.sendError(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE);
 		return new ModelAndView();
 	}
 
 	/**
 	 * Handle the case where no {@linkplain org.springframework.http.converter.HttpMessageConverter message converters}
-	 * were found that were acceptable for the client (expressed via the {@code Accept} header.
+	 * were found that were acceptable for the client (expressed via the {@code Accept} header).
 	 * <p>The default implementation sends an HTTP 406 error and returns an empty {@code ModelAndView}.
 	 * Alternatively, a fallback view could be chosen, or the HttpMediaTypeNotAcceptableException
 	 * could be rethrown as-is.
@@ -383,7 +404,7 @@ public class DefaultHandlerExceptionResolver extends AbstractHandlerExceptionRes
 
 	/**
 	 * Handle the case where a {@linkplain org.springframework.http.converter.HttpMessageConverter message converter}
-	 * cannot read from a HTTP request.
+	 * cannot read from an HTTP request.
 	 * <p>The default implementation sends an HTTP 400 error, and returns an empty {@code ModelAndView}.
 	 * Alternatively, a fallback view could be chosen, or the HttpMessageNotReadableException could be
 	 * rethrown as-is.
@@ -404,7 +425,7 @@ public class DefaultHandlerExceptionResolver extends AbstractHandlerExceptionRes
 	/**
 	 * Handle the case where a
 	 * {@linkplain org.springframework.http.converter.HttpMessageConverter message converter}
-	 * cannot write to a HTTP request.
+	 * cannot write to an HTTP request.
 	 * <p>The default implementation sends an HTTP 500 error, and returns an empty {@code ModelAndView}.
 	 * Alternatively, a fallback view could be chosen, or the HttpMessageNotWritableException could
 	 * be rethrown as-is.
@@ -499,7 +520,7 @@ public class DefaultHandlerExceptionResolver extends AbstractHandlerExceptionRes
 	/**
 	 * Handle the case where an async request timed out.
 	 * <p>The default implementation sends an HTTP 503 error.
-	 * @param ex the {@link AsyncRequestTimeoutException }to be handled
+	 * @param ex the {@link AsyncRequestTimeoutException} to be handled
 	 * @param request current HTTP request
 	 * @param response current HTTP response
 	 * @param handler the executed handler, or {@code null} if none chosen

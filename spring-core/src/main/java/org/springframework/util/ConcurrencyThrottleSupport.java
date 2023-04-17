@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,7 +29,7 @@ import org.apache.commons.logging.LogFactory;
  * <p>Designed for use as a base class, with the subclass invoking
  * the {@link #beforeAccess()} and {@link #afterAccess()} methods at
  * appropriate points of its workflow. Note that {@code afterAccess}
- * should usually be called in a finally block!
+ * should usually be called in a {@code finally} block!
  *
  * <p>The default concurrency limit of this support class is -1
  * ("unbounded concurrency"). Subclasses may override this default;

@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,6 +30,7 @@ import org.springframework.cache.interceptor.CacheOperation;
 import org.springframework.cache.interceptor.CachePutOperation;
 import org.springframework.cache.interceptor.CacheableOperation;
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.util.StringUtils;
 
@@ -57,6 +58,11 @@ public class SpringCacheAnnotationParser implements CacheAnnotationParser, Seria
 		CACHE_OPERATION_ANNOTATIONS.add(Caching.class);
 	}
 
+
+	@Override
+	public boolean isCandidateClass(Class<?> targetClass) {
+		return AnnotationUtils.isCandidateClass(targetClass, CACHE_OPERATION_ANNOTATIONS);
+	}
 
 	@Override
 	@Nullable
@@ -194,7 +200,7 @@ public class SpringCacheAnnotationParser implements CacheAnnotationParser, Seria
 	/**
 	 * Validates the specified {@link CacheOperation}.
 	 * <p>Throws an {@link IllegalStateException} if the state of the operation is
-	 * invalid. As there might be multiple sources for default values, this ensure
+	 * invalid. As there might be multiple sources for default values, this ensures
 	 * that the operation is in a proper state before being returned.
 	 * @param ae the annotated element of the cache operation
 	 * @param operation the {@link CacheOperation} to validate
@@ -216,8 +222,8 @@ public class SpringCacheAnnotationParser implements CacheAnnotationParser, Seria
 	}
 
 	@Override
-	public boolean equals(Object other) {
-		return (this == other || other instanceof SpringCacheAnnotationParser);
+	public boolean equals(@Nullable Object other) {
+		return (other instanceof SpringCacheAnnotationParser);
 	}
 
 	@Override

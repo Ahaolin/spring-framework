@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -58,7 +58,7 @@ public class ModelAndView {
 	@Nullable
 	private HttpStatus status;
 
-	/** Indicates whether or not this instance has been cleared with a call to {@link #clear()}. */
+	/** Indicates whether this instance has been cleared with a call to {@link #clear()}. */
 	private boolean cleared = false;
 
 
@@ -216,7 +216,7 @@ public class ModelAndView {
 	}
 
 	/**
-	 * Indicate whether or not this {@code ModelAndView} has a view, either
+	 * Indicate whether this {@code ModelAndView} has a view, either
 	 * as a view name or as a direct {@link View} instance.
 	 */
 	public boolean hasView() {
@@ -303,7 +303,7 @@ public class ModelAndView {
 
 	/**
 	 * Add all attributes contained in the provided Map to the model.
-	 * @param modelMap a Map of attributeName -> attributeValue pairs
+	 * @param modelMap a Map of attributeName &rarr; attributeValue pairs
 	 * @see ModelMap#addAllAttributes(Map)
 	 * @see #getModelMap()
 	 */

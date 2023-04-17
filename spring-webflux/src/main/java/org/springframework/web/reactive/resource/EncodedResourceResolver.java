@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
+import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -172,7 +173,9 @@ public class EncodedResourceResolver extends AbstractResourceResolver {
 
 	private String getExtension(String coding) {
 		String extension = this.extensions.get(coding);
-		Assert.state(extension != null, () -> "No file extension associated with content coding " + coding);
+		if (extension == null) {
+			throw new IllegalStateException("No file extension associated with content coding " + coding);
+		}
 		return extension;
 	}
 
@@ -199,11 +202,6 @@ public class EncodedResourceResolver extends AbstractResourceResolver {
 			this.original = original;
 			this.coding = coding;
 			this.encoded = original.createRelative(original.getFilename() + extension);
-		}
-
-		@Override
-		public InputStream getInputStream() throws IOException {
-			return this.encoded.getInputStream();
 		}
 
 		@Override
@@ -239,6 +237,16 @@ public class EncodedResourceResolver extends AbstractResourceResolver {
 		@Override
 		public File getFile() throws IOException {
 			return this.encoded.getFile();
+		}
+
+		@Override
+		public InputStream getInputStream() throws IOException {
+			return this.encoded.getInputStream();
+		}
+
+		@Override
+		public ReadableByteChannel readableChannel() throws IOException {
+			return this.encoded.readableChannel();
 		}
 
 		@Override

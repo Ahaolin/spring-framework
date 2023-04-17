@@ -21,8 +21,14 @@ classes/
 /build
 buildSrc/build
 /spring-*/build
+/spring-core/graalvm/build
+/spring-core/kotlin-coroutines/build
+/framework-bom/build
+/framework-docs/build
+/integration-tests/build
 /src/asciidoc/build
 target/
+/target/
 
 # Eclipse artifacts, including WTP generated manifests
 .classpath
@@ -38,3 +44,6 @@ out
 test-output
 atlassian-ide-plugin.xml
 .gradletasknamecache
+
+# VS Code
+.vscode/

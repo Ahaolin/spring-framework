@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,7 +23,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
 import javax.activation.FileTypeMap;
+import javax.mail.Address;
 import javax.mail.AuthenticationFailedException;
 import javax.mail.MessagingException;
 import javax.mail.NoSuchProviderException;
@@ -130,10 +132,10 @@ public class JavaMailSenderImpl implements JavaMailSender {
 	}
 
 	/**
-	 * Allow Map access to the JavaMail properties of this sender,
+	 * Allow {@code Map} access to the JavaMail properties of this sender,
 	 * with the option to add or override specific entries.
 	 * <p>Useful for specifying entries directly, for example via
-	 * "javaMailProperties[mail.smtp.auth]".
+	 * {@code javaMailProperties[mail.smtp.auth]}.
 	 */
 	public Properties getJavaMailProperties() {
 		return this.javaMailProperties;
@@ -154,7 +156,7 @@ public class JavaMailSenderImpl implements JavaMailSender {
 
 	/**
 	 * Return the JavaMail {@code Session},
-	 * lazily initializing it if hasn't been specified explicitly.
+	 * lazily initializing it if it hasn't been specified explicitly.
 	 */
 	public synchronized Session getSession() {
 		if (this.session == null) {
@@ -459,7 +461,8 @@ public class JavaMailSenderImpl implements JavaMailSender {
 						// Preserve explicitly specified message id...
 						mimeMessage.setHeader(HEADER_MESSAGE_ID, messageId);
 					}
-					transport.sendMessage(mimeMessage, mimeMessage.getAllRecipients());
+					Address[] addresses = mimeMessage.getAllRecipients();
+					transport.sendMessage(mimeMessage, (addresses != null ? addresses : new Address[0]));
 				}
 				catch (Exception ex) {
 					Object original = (originalMessages != null ? originalMessages[i] : mimeMessage);

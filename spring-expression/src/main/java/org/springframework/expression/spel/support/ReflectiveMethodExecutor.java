@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -58,11 +58,20 @@ public class ReflectiveMethodExecutor implements MethodExecutor {
 	 * @param method the method to invoke
 	 */
 	public ReflectiveMethodExecutor(Method method) {
+		this(method, null);
+	}
+
+	/**
+	 * Create a new executor for the given method.
+	 * @param method the method to invoke
+	 * @param targetClass the target class to invoke the method on
+	 * @since 5.3.16
+	 */
+	public ReflectiveMethodExecutor(Method method, @Nullable Class<?> targetClass) {
 		this.originalMethod = method;
-		this.methodToInvoke = ClassUtils.getInterfaceMethodIfPossible(method);
+		this.methodToInvoke = ClassUtils.getInterfaceMethodIfPossible(method, targetClass);
 		if (method.isVarArgs()) {
-			Class<?>[] paramTypes = method.getParameterTypes();
-			this.varargsPosition = paramTypes.length - 1;
+			this.varargsPosition = method.getParameterCount() - 1;
 		}
 		else {
 			this.varargsPosition = null;

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,7 +27,7 @@ import org.springframework.util.Assert;
  * <p>Mainly intended for testing scenarios.
  *
  * <p>Execution in the calling thread does have the advantage of participating
- * in it's thread context, for example the thread context class loader or the
+ * in its thread context, for example the thread context class loader or the
  * thread's current transaction association. That said, in many cases,
  * asynchronous execution will be preferable: choose an asynchronous
  * {@code TaskExecutor} instead for such scenarios.

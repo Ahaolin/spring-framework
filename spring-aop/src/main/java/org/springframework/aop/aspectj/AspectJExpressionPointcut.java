@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,13 +16,33 @@
 
 package org.springframework.aop.aspectj;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.aspectj.weaver.patterns.NamePattern;
 import org.aspectj.weaver.reflect.ReflectionWorld.ReflectionWorldException;
 import org.aspectj.weaver.reflect.ShadowMatchImpl;
-import org.aspectj.weaver.tools.*;
+import org.aspectj.weaver.tools.ContextBasedMatcher;
+import org.aspectj.weaver.tools.FuzzyBoolean;
+import org.aspectj.weaver.tools.JoinPointMatch;
+import org.aspectj.weaver.tools.MatchingContext;
+import org.aspectj.weaver.tools.PointcutDesignatorHandler;
+import org.aspectj.weaver.tools.PointcutExpression;
+import org.aspectj.weaver.tools.PointcutParameter;
+import org.aspectj.weaver.tools.PointcutParser;
+import org.aspectj.weaver.tools.PointcutPrimitive;
+import org.aspectj.weaver.tools.ShadowMatch;
+
 import org.springframework.aop.ClassFilter;
 import org.springframework.aop.IntroductionAwareMethodMatcher;
 import org.springframework.aop.MethodMatcher;
@@ -43,21 +63,7 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
- * Aspect 表达式的切点信息
- *
- *
- *
  * Spring {@link org.springframework.aop.Pointcut} implementation
  * that uses the AspectJ weaver to evaluate a pointcut expression.
  *
@@ -110,11 +116,6 @@ public class AspectJExpressionPointcut extends AbstractExpressionPointcut
 	@Nullable
 	private transient ClassLoader pointcutClassLoader;
 
-    /**
-     * 表达式
-     *
-     * 通过 {@link #buildPointcutExpression(ClassLoader)} 解析
-     */
 	@Nullable
 	private transient PointcutExpression pointcutExpression;
 
@@ -288,10 +289,9 @@ public class AspectJExpressionPointcut extends AbstractExpressionPointcut
 		return false;
 	}
 
-	@Override // TODO 芋艿，这个方法，后续有需要，在细看。和 AspectJ 的机制，有一些关系
+	@Override
 	public boolean matches(Method method, Class<?> targetClass, boolean hasIntroductions) {
 		obtainPointcutExpression();
-		// 进行匹配
 		ShadowMatch shadowMatch = getTargetShadowMatch(method, targetClass);
 
 		// Special handling for this, target, @this, @target, @annotation
@@ -299,7 +299,8 @@ public class AspectJExpressionPointcut extends AbstractExpressionPointcut
 		// and there will never be matching subclass at runtime.
 		if (shadowMatch.alwaysMatches()) {
 			return true;
-		} else if (shadowMatch.neverMatches()) {
+		}
+		else if (shadowMatch.neverMatches()) {
 			return false;
 		}
 		else {
@@ -377,7 +378,7 @@ public class AspectJExpressionPointcut extends AbstractExpressionPointcut
 		}
 		catch (Throwable ex) {
 			if (logger.isDebugEnabled()) {
-				logger.debug("Failed to evaluate join point for arguments " + Arrays.asList(args) +
+				logger.debug("Failed to evaluate join point for arguments " + Arrays.toString(args) +
 						" - falling back to non-match", ex);
 			}
 			return false;
@@ -518,7 +519,7 @@ public class AspectJExpressionPointcut extends AbstractExpressionPointcut
 
 
 	@Override
-	public boolean equals(Object other) {
+	public boolean equals(@Nullable Object other) {
 		if (this == other) {
 			return true;
 		}
@@ -543,19 +544,16 @@ public class AspectJExpressionPointcut extends AbstractExpressionPointcut
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("AspectJExpressionPointcut: ");
-		sb.append("(");
+		StringBuilder sb = new StringBuilder("AspectJExpressionPointcut: (");
 		for (int i = 0; i < this.pointcutParameterTypes.length; i++) {
 			sb.append(this.pointcutParameterTypes[i].getName());
-			sb.append(" ");
+			sb.append(' ');
 			sb.append(this.pointcutParameterNames[i]);
 			if ((i+1) < this.pointcutParameterTypes.length) {
 				sb.append(", ");
 			}
 		}
-		sb.append(")");
-		sb.append(" ");
+		sb.append(") ");
 		if (getExpression() != null) {
 			sb.append(getExpression());
 		}

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,10 +23,6 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
- * <pre>
- *      将给定的 InputStream 作为一种资源的 Resource 的实现类
- * </pre>
- *
  * {@link Resource} implementation for a given {@link InputStream}.
  * <p>Should only be used if no other specific {@code Resource} implementation
  * is applicable. In particular, prefer {@link ByteArrayResource} or any of the
@@ -119,7 +115,7 @@ public class InputStreamResource extends AbstractResource {
 	 * This implementation compares the underlying InputStream.
 	 */
 	@Override
-	public boolean equals(Object other) {
+	public boolean equals(@Nullable Object other) {
 		return (this == other || (other instanceof InputStreamResource &&
 				((InputStreamResource) other).inputStream.equals(this.inputStream)));
 	}

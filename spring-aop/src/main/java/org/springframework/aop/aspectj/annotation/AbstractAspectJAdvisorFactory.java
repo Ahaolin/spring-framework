@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,17 +16,6 @@
 
 package org.springframework.aop.aspectj.annotation;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.aspectj.lang.annotation.*;
-import org.aspectj.lang.reflect.AjType;
-import org.aspectj.lang.reflect.AjTypeSystem;
-import org.aspectj.lang.reflect.PerClauseKind;
-import org.springframework.aop.framework.AopConfigException;
-import org.springframework.core.ParameterNameDiscoverer;
-import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.lang.Nullable;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -35,6 +24,24 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.aspectj.lang.annotation.After;
+import org.aspectj.lang.annotation.AfterReturning;
+import org.aspectj.lang.annotation.AfterThrowing;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+import org.aspectj.lang.annotation.Pointcut;
+import org.aspectj.lang.reflect.AjType;
+import org.aspectj.lang.reflect.AjTypeSystem;
+import org.aspectj.lang.reflect.PerClauseKind;
+
+import org.springframework.aop.framework.AopConfigException;
+import org.springframework.core.ParameterNameDiscoverer;
+import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.lang.Nullable;
 
 /**
  * Abstract base class for factories that can create Spring AOP Advisors
@@ -70,8 +77,7 @@ public abstract class AbstractAspectJAdvisorFactory implements AspectJAdvisorFac
 	 */
 	@Override
 	public boolean isAspect(Class<?> clazz) {
-		return (hasAspectAnnotation(clazz)  // 使用 @Aspect 注解
-                && !compiledByAjc(clazz)); // 并未使用 ajc 编译器进行编译过。关于 ajc ，可以看 https://www.jianshu.com/p/fe8d1e8bd63e
+		return (hasAspectAnnotation(clazz) && !compiledByAjc(clazz));
 	}
 
 	private boolean hasAspectAnnotation(Class<?> clazz) {
@@ -79,8 +85,6 @@ public abstract class AbstractAspectJAdvisorFactory implements AspectJAdvisorFac
 	}
 
 	/**
-     * 判断是否使用 ajc 编译过
-     *
 	 * We need to detect this as "code-style" AspectJ aspects should not be
 	 * interpreted by Spring AOP.
 	 */
@@ -99,18 +103,17 @@ public abstract class AbstractAspectJAdvisorFactory implements AspectJAdvisorFac
 	@Override
 	public void validate(Class<?> aspectClass) throws AopConfigException {
 		// If the parent has the annotation and isn't abstract it's an error
-        // 父类如果有 @Aspect 注解，必须为抽象类，否则抛出 AopConfigException 异常
-		if (aspectClass.getSuperclass().getAnnotation(Aspect.class) != null &&
-				!Modifier.isAbstract(aspectClass.getSuperclass().getModifiers())) {
+		Class<?> superclass = aspectClass.getSuperclass();
+		if (superclass.getAnnotation(Aspect.class) != null &&
+				!Modifier.isAbstract(superclass.getModifiers())) {
 			throw new AopConfigException("[" + aspectClass.getName() + "] cannot extend concrete aspect [" +
-					aspectClass.getSuperclass().getName() + "]");
+					superclass.getName() + "]");
 		}
 
 		AjType<?> ajType = AjTypeSystem.getAjType(aspectClass);
 		if (!ajType.isAspect()) {
 			throw new NotAnAtAspectException(aspectClass);
 		}
-		// 暂时不支持 PerClauseKind.PERCFLOW 和 PerClauseKind.PERCFLOWBELOW 类型
 		if (ajType.getPerClause().getKind() == PerClauseKind.PERCFLOW) {
 			throw new AopConfigException(aspectClass.getName() + " uses percflow instantiation model: " +
 					"This is not supported in Spring AOP.");

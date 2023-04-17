@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,14 +19,15 @@ package org.springframework.web.socket.adapter.standard;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
 import javax.websocket.Extension;
 
 import org.springframework.util.LinkedCaseInsensitiveMap;
 import org.springframework.web.socket.WebSocketExtension;
 
 /**
- * A sub-class of {@link org.springframework.web.socket.WebSocketExtension} that
- * can be constructed from an {@link javax.websocket.Extension}.
+ * A subclass of {@link org.springframework.web.socket.WebSocketExtension} that
+ * can be constructed from a {@link javax.websocket.Extension}.
  *
  * @author Rossen Stoyanchev
  * @since 4.0

@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,18 +18,20 @@ package org.springframework.util;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.Charset;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 
@@ -39,7 +41,7 @@ import org.springframework.lang.Nullable;
  * Miscellaneous {@link String} utility methods.
  *
  * <p>Mainly for internal use within the framework; consider
- * <a href="http://commons.apache.org/proper/commons-lang/">Apache's Commons Lang</a>
+ * <a href="https://commons.apache.org/proper/commons-lang/">Apache's Commons Lang</a>
  * for a more comprehensive suite of {@code String} utilities.
  *
  * <p>This class delivers some simple functionality that should really be
@@ -59,7 +61,11 @@ import org.springframework.lang.Nullable;
  */
 public abstract class StringUtils {
 
+	private static final String[] EMPTY_STRING_ARRAY = {};
+
 	private static final String FOLDER_SEPARATOR = "/";
+
+	private static final char FOLDER_SEPARATOR_CHAR = '/';
 
 	private static final String WINDOWS_FOLDER_SEPARATOR = "\\";
 
@@ -69,22 +75,32 @@ public abstract class StringUtils {
 
 	private static final char EXTENSION_SEPARATOR = '.';
 
+	private static final int DEFAULT_TRUNCATION_THRESHOLD = 100;
+
+	private static final String TRUNCATION_SUFFIX = " (truncated)...";
+
 
 	//---------------------------------------------------------------------
 	// General convenience methods for working with Strings
 	//---------------------------------------------------------------------
 
 	/**
-	 * Check whether the given {@code String} is empty.
+	 * Check whether the given object (possibly a {@code String}) is empty.
+	 * This is effectively a shortcut for {@code !hasLength(String)}.
 	 * <p>This method accepts any Object as an argument, comparing it to
 	 * {@code null} and the empty String. As a consequence, this method
 	 * will never return {@code true} for a non-null non-String object.
 	 * <p>The Object signature is useful for general attribute handling code
 	 * that commonly deals with Strings but generally has to iterate over
 	 * Objects since attributes may e.g. be primitive value objects as well.
-	 * @param str the candidate String
+	 * <p><b>Note: If the object is typed to {@code String} upfront, prefer
+	 * {@link #hasLength(String)} or {@link #hasText(String)} instead.</b>
+	 * @param str the candidate object (possibly a {@code String})
 	 * @since 3.2.1
+	 * @deprecated as of 5.3, in favor of {@link #hasLength(String)} and
+	 * {@link #hasText(String)} (or {@link ObjectUtils#isEmpty(Object)})
 	 */
+	@Deprecated
 	public static boolean isEmpty(@Nullable Object str) {
 		return (str == null || "".equals(str));
 	}
@@ -102,7 +118,8 @@ public abstract class StringUtils {
 	 * </pre>
 	 * @param str the {@code CharSequence} to check (may be {@code null})
 	 * @return {@code true} if the {@code CharSequence} is not {@code null} and has length
-	 * @see #hasText(String)
+	 * @see #hasLength(String)
+	 * @see #hasText(CharSequence)
 	 */
 	public static boolean hasLength(@Nullable CharSequence str) {
 		return (str != null && str.length() > 0);
@@ -136,6 +153,8 @@ public abstract class StringUtils {
 	 * @param str the {@code CharSequence} to check (may be {@code null})
 	 * @return {@code true} if the {@code CharSequence} is not {@code null},
 	 * its length is greater than 0, and it does not contain whitespace only
+	 * @see #hasText(String)
+	 * @see #hasLength(CharSequence)
 	 * @see Character#isWhitespace
 	 */
 	public static boolean hasText(@Nullable CharSequence str) {
@@ -151,6 +170,8 @@ public abstract class StringUtils {
 	 * @return {@code true} if the {@code String} is not {@code null}, its
 	 * length is greater than 0, and it does not contain whitespace only
 	 * @see #hasText(CharSequence)
+	 * @see #hasLength(String)
+	 * @see Character#isWhitespace
 	 */
 	public static boolean hasText(@Nullable String str) {
 		return (str != null && !str.isEmpty() && containsText(str));
@@ -224,26 +245,43 @@ public abstract class StringUtils {
 	}
 
 	/**
-	 * Trim <i>all</i> whitespace from the given {@code String}:
+	 * Trim <em>all</em> whitespace from the given {@code CharSequence}:
 	 * leading, trailing, and in between characters.
-	 * @param str the {@code String} to check
-	 * @return the trimmed {@code String}
+	 * @param text the {@code CharSequence} to check
+	 * @return the trimmed {@code CharSequence}
+	 * @since 5.3.22
+	 * @see #trimAllWhitespace(String)
 	 * @see java.lang.Character#isWhitespace
 	 */
-	public static String trimAllWhitespace(String str) {
-		if (!hasLength(str)) {
-			return str;
+	public static CharSequence trimAllWhitespace(CharSequence text) {
+		if (!hasLength(text)) {
+			return text;
 		}
 
-		int len = str.length();
-		StringBuilder sb = new StringBuilder(str.length());
+		int len = text.length();
+		StringBuilder sb = new StringBuilder(text.length());
 		for (int i = 0; i < len; i++) {
-			char c = str.charAt(i);
+			char c = text.charAt(i);
 			if (!Character.isWhitespace(c)) {
 				sb.append(c);
 			}
 		}
 		return sb.toString();
+	}
+
+	/**
+	 * Trim <em>all</em> whitespace from the given {@code String}:
+	 * leading, trailing, and in between characters.
+	 * @param str the {@code String} to check
+	 * @return the trimmed {@code String}
+	 * @see #trimAllWhitespace(CharSequence)
+	 * @see java.lang.Character#isWhitespace
+	 */
+	public static String trimAllWhitespace(String str) {
+		if (str == null) {
+			return null;
+		}
+		return trimAllWhitespace((CharSequence) str).toString();
 	}
 
 	/**
@@ -257,11 +295,11 @@ public abstract class StringUtils {
 			return str;
 		}
 
-		StringBuilder sb = new StringBuilder(str);
-		while (sb.length() > 0 && Character.isWhitespace(sb.charAt(0))) {
-			sb.deleteCharAt(0);
+		int beginIdx = 0;
+		while (beginIdx < str.length() && Character.isWhitespace(str.charAt(beginIdx))) {
+			beginIdx++;
 		}
-		return sb.toString();
+		return str.substring(beginIdx);
 	}
 
 	/**
@@ -275,11 +313,11 @@ public abstract class StringUtils {
 			return str;
 		}
 
-		StringBuilder sb = new StringBuilder(str);
-		while (sb.length() > 0 && Character.isWhitespace(sb.charAt(sb.length() - 1))) {
-			sb.deleteCharAt(sb.length() - 1);
+		int endIdx = str.length() - 1;
+		while (endIdx >= 0 && Character.isWhitespace(str.charAt(endIdx))) {
+			endIdx--;
 		}
-		return sb.toString();
+		return str.substring(0, endIdx + 1);
 	}
 
 	/**
@@ -293,11 +331,11 @@ public abstract class StringUtils {
 			return str;
 		}
 
-		StringBuilder sb = new StringBuilder(str);
-		while (sb.length() > 0 && sb.charAt(0) == leadingCharacter) {
-			sb.deleteCharAt(0);
+		int beginIdx = 0;
+		while (beginIdx < str.length() && leadingCharacter == str.charAt(beginIdx)) {
+			beginIdx++;
 		}
-		return sb.toString();
+		return str.substring(beginIdx);
 	}
 
 	/**
@@ -311,11 +349,21 @@ public abstract class StringUtils {
 			return str;
 		}
 
-		StringBuilder sb = new StringBuilder(str);
-		while (sb.length() > 0 && sb.charAt(sb.length() - 1) == trailingCharacter) {
-			sb.deleteCharAt(sb.length() - 1);
+		int endIdx = str.length() - 1;
+		while (endIdx >= 0 && trailingCharacter == str.charAt(endIdx)) {
+			endIdx--;
 		}
-		return sb.toString();
+		return str.substring(0, endIdx + 1);
+	}
+
+	/**
+	 * Test if the given {@code String} matches the given single character.
+	 * @param str the {@code String} to check
+	 * @param singleCharacter the character to compare to
+	 * @since 5.2.9
+	 */
+	public static boolean matchesCharacter(@Nullable String str, char singleCharacter) {
+		return (str != null && str.length() == 1 && str.charAt(0) == singleCharacter);
 	}
 
 	/**
@@ -407,14 +455,14 @@ public abstract class StringUtils {
 		int pos = 0;  // our position in the old string
 		int patLen = oldPattern.length();
 		while (index >= 0) {
-			sb.append(inString.substring(pos, index));
+			sb.append(inString, pos, index);
 			sb.append(newPattern);
 			pos = index + patLen;
 			index = inString.indexOf(oldPattern, pos);
 		}
 
 		// append any characters to the right of a match
-		sb.append(inString.substring(pos));
+		sb.append(inString, pos, inString.length());
 		return sb.toString();
 	}
 
@@ -440,16 +488,19 @@ public abstract class StringUtils {
 			return inString;
 		}
 
-		StringBuilder sb = new StringBuilder(inString.length());
+		int lastCharIndex = 0;
+		char[] result = new char[inString.length()];
 		for (int i = 0; i < inString.length(); i++) {
 			char c = inString.charAt(i);
 			if (charsToDelete.indexOf(c) == -1) {
-				sb.append(c);
+				result[lastCharIndex++] = c;
 			}
 		}
-		return sb.toString();
+		if (lastCharIndex == inString.length()) {
+			return inString;
+		}
+		return new String(result, 0, lastCharIndex);
 	}
-
 
 	//---------------------------------------------------------------------
 	// Convenience methods for working with formatted Strings
@@ -538,12 +589,12 @@ public abstract class StringUtils {
 
 		char[] chars = str.toCharArray();
 		chars[0] = updatedChar;
-		return new String(chars, 0, chars.length);
+		return new String(chars);
 	}
 
 	/**
 	 * Extract the filename from the given Java resource path,
-	 * e.g. {@code "mypath/myfile.txt" -> "myfile.txt"}.
+	 * e.g. {@code "mypath/myfile.txt" &rarr; "myfile.txt"}.
 	 * @param path the file path (may be {@code null})
 	 * @return the extracted filename, or {@code null} if none
 	 */
@@ -553,13 +604,13 @@ public abstract class StringUtils {
 			return null;
 		}
 
-		int separatorIndex = path.lastIndexOf(FOLDER_SEPARATOR);
+		int separatorIndex = path.lastIndexOf(FOLDER_SEPARATOR_CHAR);
 		return (separatorIndex != -1 ? path.substring(separatorIndex + 1) : path);
 	}
 
 	/**
 	 * Extract the filename extension from the given Java resource path,
-	 * e.g. "mypath/myfile.txt" -> "txt".
+	 * e.g. "mypath/myfile.txt" &rarr; "txt".
 	 * @param path the file path (may be {@code null})
 	 * @return the extracted filename extension, or {@code null} if none
 	 */
@@ -574,7 +625,7 @@ public abstract class StringUtils {
 			return null;
 		}
 
-		int folderIndex = path.lastIndexOf(FOLDER_SEPARATOR);
+		int folderIndex = path.lastIndexOf(FOLDER_SEPARATOR_CHAR);
 		if (folderIndex > extIndex) {
 			return null;
 		}
@@ -584,7 +635,7 @@ public abstract class StringUtils {
 
 	/**
 	 * Strip the filename extension from the given Java resource path,
-	 * e.g. "mypath/myfile.txt" -> "mypath/myfile".
+	 * e.g. "mypath/myfile.txt" &rarr; "mypath/myfile".
 	 * @param path the file path
 	 * @return the path with stripped filename extension
 	 */
@@ -594,7 +645,7 @@ public abstract class StringUtils {
 			return path;
 		}
 
-		int folderIndex = path.lastIndexOf(FOLDER_SEPARATOR);
+		int folderIndex = path.lastIndexOf(FOLDER_SEPARATOR_CHAR);
 		if (folderIndex > extIndex) {
 			return path;
 		}
@@ -611,11 +662,11 @@ public abstract class StringUtils {
 	 * @return the full file path that results from applying the relative path
 	 */
 	public static String applyRelativePath(String path, String relativePath) {
-		int separatorIndex = path.lastIndexOf(FOLDER_SEPARATOR);
+		int separatorIndex = path.lastIndexOf(FOLDER_SEPARATOR_CHAR);
 		if (separatorIndex != -1) {
 			String newPath = path.substring(0, separatorIndex);
 			if (!relativePath.startsWith(FOLDER_SEPARATOR)) {
-				newPath += FOLDER_SEPARATOR;
+				newPath += FOLDER_SEPARATOR_CHAR;
 			}
 			return newPath + relativePath;
 		}
@@ -629,6 +680,9 @@ public abstract class StringUtils {
 	 * inner simple dots.
 	 * <p>The result is convenient for path comparison. For other uses,
 	 * notice that Windows separators ("\") are replaced by simple slashes.
+	 * <p><strong>NOTE</strong> that {@code cleanPath} should not be depended
+	 * upon in a security context. Other mechanisms should be used to prevent
+	 * path-traversal issues.
 	 * @param path the original path
 	 * @return the normalized path
 	 */
@@ -636,7 +690,14 @@ public abstract class StringUtils {
 		if (!hasLength(path)) {
 			return path;
 		}
-		String pathToUse = replace(path, WINDOWS_FOLDER_SEPARATOR, FOLDER_SEPARATOR);
+
+		String normalizedPath = replace(path, WINDOWS_FOLDER_SEPARATOR, FOLDER_SEPARATOR);
+		String pathToUse = normalizedPath;
+
+		// Shortcut if there is no work to do
+		if (pathToUse.indexOf('.') == -1) {
+			return pathToUse;
+		}
 
 		// Strip prefix from path to analyze, to not treat it as part of the
 		// first path element. This is necessary to correctly parse paths like
@@ -659,7 +720,8 @@ public abstract class StringUtils {
 		}
 
 		String[] pathArray = delimitedListToStringArray(pathToUse, FOLDER_SEPARATOR);
-		LinkedList<String> pathElements = new LinkedList<>();
+		// we never require more elements than pathArray and in the common case the same number
+		Deque<String> pathElements = new ArrayDeque<>(pathArray.length);
 		int tops = 0;
 
 		for (int i = pathArray.length - 1; i >= 0; i--) {
@@ -678,21 +740,27 @@ public abstract class StringUtils {
 				}
 				else {
 					// Normal path element found.
-					pathElements.add(0, element);
+					pathElements.addFirst(element);
 				}
 			}
 		}
 
+		// All path elements stayed the same - shortcut
+		if (pathArray.length == pathElements.size()) {
+			return normalizedPath;
+		}
 		// Remaining top paths need to be retained.
 		for (int i = 0; i < tops; i++) {
-			pathElements.add(0, TOP_PATH);
+			pathElements.addFirst(TOP_PATH);
 		}
 		// If nothing else left, at least explicitly point to current path.
-		if (pathElements.size() == 1 && "".equals(pathElements.getLast()) && !prefix.endsWith(FOLDER_SEPARATOR)) {
-			pathElements.add(0, CURRENT_PATH);
+		if (pathElements.size() == 1 && pathElements.getLast().isEmpty() && !prefix.endsWith(FOLDER_SEPARATOR)) {
+			pathElements.addFirst(CURRENT_PATH);
 		}
 
-		return prefix + collectionToDelimitedString(pathElements, FOLDER_SEPARATOR);
+		final String joined = collectionToDelimitedString(pathElements, FOLDER_SEPARATOR);
+		// avoid string concatenation with empty prefix
+		return prefix.isEmpty() ? joined : prefix + joined;
 	}
 
 	/**
@@ -727,7 +795,7 @@ public abstract class StringUtils {
 		}
 		Assert.notNull(charset, "Charset must not be null");
 
-		ByteArrayOutputStream bos = new ByteArrayOutputStream(length);
+		ByteArrayOutputStream baos = new ByteArrayOutputStream(length);
 		boolean changed = false;
 		for (int i = 0; i < length; i++) {
 			int ch = source.charAt(i);
@@ -740,7 +808,7 @@ public abstract class StringUtils {
 					if (u == -1 || l == -1) {
 						throw new IllegalArgumentException("Invalid encoded sequence \"" + source.substring(i) + "\"");
 					}
-					bos.write((char) ((u << 4) + l));
+					baos.write((char) ((u << 4) + l));
 					i += 2;
 					changed = true;
 				}
@@ -749,19 +817,19 @@ public abstract class StringUtils {
 				}
 			}
 			else {
-				bos.write(ch);
+				baos.write(ch);
 			}
 		}
-		return (changed ? new String(bos.toByteArray(), charset) : source);
+		return (changed ? StreamUtils.copyToString(baos, charset) : source);
 	}
 
 	/**
 	 * Parse the given {@code String} value into a {@link Locale}, accepting
-	 * the {@link Locale#toString} format as well as BCP 47 language tags.
+	 * the {@link Locale#toString} format as well as BCP 47 language tags as
+	 * specified by {@link Locale#forLanguageTag}.
 	 * @param localeValue the locale value: following either {@code Locale's}
 	 * {@code toString()} format ("en", "en_UK", etc), also accepting spaces as
 	 * separators (as an alternative to underscores), or BCP 47 (e.g. "en-UK")
-	 * as specified by {@link Locale#forLanguageTag} on Java 7+
 	 * @return a corresponding {@code Locale} instance, or {@code null} if none
 	 * @throws IllegalArgumentException in case of an invalid locale specification
 	 * @since 5.0.4
@@ -774,7 +842,9 @@ public abstract class StringUtils {
 		if (tokens.length == 1) {
 			validateLocalePart(localeValue);
 			Locale resolved = Locale.forLanguageTag(localeValue);
-			return (resolved.getLanguage().length() > 0 ? resolved : null);
+			if (resolved.getLanguage().length() > 0) {
+				return resolved;
+			}
 		}
 		return parseLocaleTokens(localeValue, tokens);
 	}
@@ -873,6 +943,28 @@ public abstract class StringUtils {
 	//---------------------------------------------------------------------
 
 	/**
+	 * Copy the given {@link Collection} into a {@code String} array.
+	 * <p>The {@code Collection} must contain {@code String} elements only.
+	 * @param collection the {@code Collection} to copy
+	 * (potentially {@code null} or empty)
+	 * @return the resulting {@code String} array
+	 */
+	public static String[] toStringArray(@Nullable Collection<String> collection) {
+		return (!CollectionUtils.isEmpty(collection) ? collection.toArray(EMPTY_STRING_ARRAY) : EMPTY_STRING_ARRAY);
+	}
+
+	/**
+	 * Copy the given {@link Enumeration} into a {@code String} array.
+	 * <p>The {@code Enumeration} must contain {@code String} elements only.
+	 * @param enumeration the {@code Enumeration} to copy
+	 * (potentially {@code null} or empty)
+	 * @return the resulting {@code String} array
+	 */
+	public static String[] toStringArray(@Nullable Enumeration<String> enumeration) {
+		return (enumeration != null ? toStringArray(Collections.list(enumeration)) : EMPTY_STRING_ARRAY);
+	}
+
+	/**
 	 * Append the given {@code String} to the given {@code String} array,
 	 * returning a new array consisting of the input array contents plus
 	 * the given {@code String}.
@@ -936,8 +1028,7 @@ public abstract class StringUtils {
 			return array1;
 		}
 
-		List<String> result = new ArrayList<>();
-		result.addAll(Arrays.asList(array1));
+		List<String> result = new ArrayList<>(Arrays.asList(array1));
 		for (String str : array2) {
 			if (!result.contains(str)) {
 				result.add(str);
@@ -947,13 +1038,13 @@ public abstract class StringUtils {
 	}
 
 	/**
-	 * Turn given source {@code String} array into sorted array.
-	 * @param array the source array
-	 * @return the sorted array (never {@code null})
+	 * Sort the given {@code String} array if necessary.
+	 * @param array the original array (potentially empty)
+	 * @return the array in sorted form (never {@code null})
 	 */
 	public static String[] sortStringArray(String[] array) {
 		if (ObjectUtils.isEmpty(array)) {
-			return new String[0];
+			return array;
 		}
 
 		Arrays.sort(array);
@@ -961,28 +1052,8 @@ public abstract class StringUtils {
 	}
 
 	/**
-	 * Copy the given {@code Collection} into a {@code String} array.
-	 * <p>The {@code Collection} must contain {@code String} elements only.
-	 * @param collection the {@code Collection} to copy
-	 * @return the {@code String} array
-	 */
-	public static String[] toStringArray(Collection<String> collection) {
-		return collection.toArray(new String[0]);
-	}
-
-	/**
-	 * Copy the given Enumeration into a {@code String} array.
-	 * The Enumeration must contain {@code String} elements only.
-	 * @param enumeration the Enumeration to copy
-	 * @return the {@code String} array
-	 */
-	public static String[] toStringArray(Enumeration<String> enumeration) {
-		return toStringArray(Collections.list(enumeration));
-	}
-
-	/**
-	 * Trim the elements of the given {@code String} array,
-	 * calling {@code String.trim()} on each of them.
+	 * Trim the elements of the given {@code String} array, calling
+	 * {@code String.trim()} on each non-null element.
 	 * @param array the original {@code String} array (potentially empty)
 	 * @return the resulting array (of the same size) with trimmed elements
 	 */
@@ -1132,7 +1203,7 @@ public abstract class StringUtils {
 			@Nullable String str, String delimiters, boolean trimTokens, boolean ignoreEmptyTokens) {
 
 		if (str == null) {
-			return new String[0];
+			return EMPTY_STRING_ARRAY;
 		}
 
 		StringTokenizer st = new StringTokenizer(str, delimiters);
@@ -1154,7 +1225,7 @@ public abstract class StringUtils {
 	 * {@code String} array.
 	 * <p>A single {@code delimiter} may consist of more than one character,
 	 * but it will still be considered as a single delimiter string, rather
-	 * than as bunch of potential delimiter characters, in contrast to
+	 * than as a bunch of potential delimiter characters, in contrast to
 	 * {@link #tokenizeToStringArray}.
 	 * @param str the input {@code String} (potentially {@code null} or empty)
 	 * @param delimiter the delimiter between elements (this is a single delimiter,
@@ -1171,7 +1242,7 @@ public abstract class StringUtils {
 	 * a {@code String} array.
 	 * <p>A single {@code delimiter} may consist of more than one character,
 	 * but it will still be considered as a single delimiter string, rather
-	 * than as bunch of potential delimiter characters, in contrast to
+	 * than as a bunch of potential delimiter characters, in contrast to
 	 * {@link #tokenizeToStringArray}.
 	 * @param str the input {@code String} (potentially {@code null} or empty)
 	 * @param delimiter the delimiter between elements (this is a single delimiter,
@@ -1185,7 +1256,7 @@ public abstract class StringUtils {
 			@Nullable String str, @Nullable String delimiter, @Nullable String charsToDelete) {
 
 		if (str == null) {
-			return new String[0];
+			return EMPTY_STRING_ARRAY;
 		}
 		if (delimiter == null) {
 			return new String[] {str};
@@ -1251,7 +1322,12 @@ public abstract class StringUtils {
 			return "";
 		}
 
-		StringBuilder sb = new StringBuilder();
+		int totalLength = coll.size() * (prefix.length() + suffix.length()) + (coll.size() - 1) * delim.length();
+		for (Object element : coll) {
+			totalLength += String.valueOf(element).length();
+		}
+
+		StringBuilder sb = new StringBuilder(totalLength);
 		Iterator<?> it = coll.iterator();
 		while (it.hasNext()) {
 			sb.append(prefix).append(it.next()).append(suffix);
@@ -1298,14 +1374,11 @@ public abstract class StringUtils {
 			return ObjectUtils.nullSafeToString(arr[0]);
 		}
 
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < arr.length; i++) {
-			if (i > 0) {
-				sb.append(delim);
-			}
-			sb.append(arr[i]);
+		StringJoiner sj = new StringJoiner(delim);
+		for (Object elem : arr) {
+			sj.add(String.valueOf(elem));
 		}
-		return sb.toString();
+		return sj.toString();
 	}
 
 	/**
@@ -1317,6 +1390,42 @@ public abstract class StringUtils {
 	 */
 	public static String arrayToCommaDelimitedString(@Nullable Object[] arr) {
 		return arrayToDelimitedString(arr, ",");
+	}
+
+	/**
+	 * Truncate the supplied {@link CharSequence}.
+	 * <p>Delegates to {@link #truncate(CharSequence, int)}, supplying {@code 100}
+	 * as the threshold.
+	 * @param charSequence the {@code CharSequence} to truncate
+	 * @return a truncated string, or a string representation of the original
+	 * {@code CharSequence} if its length does not exceed the threshold
+	 * @since 5.3.27
+	 */
+	public static String truncate(CharSequence charSequence) {
+		return truncate(charSequence, DEFAULT_TRUNCATION_THRESHOLD);
+	}
+
+	/**
+	 * Truncate the supplied {@link CharSequence}.
+	 * <p>If the length of the {@code CharSequence} is greater than the threshold,
+	 * this method returns a {@linkplain CharSequence#subSequence(int, int)
+	 * subsequence} of the {@code CharSequence} (up to the threshold) appended
+	 * with the suffix {@code " (truncated)..."}. Otherwise, this method returns
+	 * {@code charSequence.toString()}.
+	 * @param charSequence the {@code CharSequence} to truncate
+	 * @param threshold the maximum length after which to truncate; must be a
+	 * positive number
+	 * @return a truncated string, or a string representation of the original
+	 * {@code CharSequence} if its length does not exceed the threshold
+	 * @since 5.3.27
+	 */
+	public static String truncate(CharSequence charSequence, int threshold) {
+		Assert.isTrue(threshold > 0,
+				() -> "Truncation threshold must be a positive number: " + threshold);
+		if (charSequence.length() > threshold) {
+			return charSequence.subSequence(0, threshold) + TRUNCATION_SUFFIX;
+		}
+		return charSequence.toString();
 	}
 
 }

@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,7 +38,7 @@ import org.springframework.core.annotation.AliasFor;
  * @since 3.1
  * @see CacheConfig
  */
-@Target({ElementType.METHOD, ElementType.TYPE})
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented
@@ -111,7 +111,8 @@ public @interface CacheEvict {
 
 	/**
 	 * Spring Expression Language (SpEL) expression used for making the cache
-	 * eviction operation conditional.
+	 * eviction operation conditional. Evict that cache if the condition evaluates
+	 * to {@code true}.
 	 * <p>Default is {@code ""}, meaning the cache eviction is always performed.
 	 * <p>The SpEL expression evaluates against a dedicated context that provides the
 	 * following meta-data:
@@ -142,7 +143,7 @@ public @interface CacheEvict {
 	 * occur irrespective of the method outcome (i.e., whether it threw an
 	 * exception or not).
 	 * <p>Defaults to {@code false}, meaning that the cache eviction operation
-	 * will occur <em>after</em> the advised method is invoked successfully (i.e.,
+	 * will occur <em>after</em> the advised method is invoked successfully (i.e.
 	 * only if the invocation did not throw an exception).
 	 */
 	boolean beforeInvocation() default false;

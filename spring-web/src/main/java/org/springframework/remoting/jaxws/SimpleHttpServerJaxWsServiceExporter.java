@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,7 @@ package org.springframework.remoting.jaxws;
 
 import java.net.InetSocketAddress;
 import java.util.List;
+
 import javax.jws.WebService;
 import javax.xml.ws.Endpoint;
 import javax.xml.ws.WebServiceProvider;
@@ -134,7 +135,7 @@ public class SimpleHttpServerJaxWsServiceExporter extends AbstractJaxWsServiceEx
 	 * Set the base path for context publication. Default is "/".
 	 * <p>For each context publication path, the service name will be
 	 * appended to this base address. E.g. service name "OrderService"
-	 * -> "/OrderService".
+	 * &rarr; "/OrderService".
 	 * @see javax.xml.ws.Endpoint#publish(Object)
 	 * @see javax.jws.WebService#serviceName()
 	 */

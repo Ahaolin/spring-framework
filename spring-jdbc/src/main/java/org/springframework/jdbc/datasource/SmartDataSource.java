@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,7 @@
 package org.springframework.jdbc.datasource;
 
 import java.sql.Connection;
+
 import javax.sql.DataSource;
 
 /**
@@ -24,7 +25,7 @@ import javax.sql.DataSource;
  * implemented by special DataSources that return JDBC Connections
  * in an unwrapped fashion.
  *
- * <p>Classes using this interface can query whether or not the Connection
+ * <p>Classes using this interface can query whether the Connection
  * should be closed after an operation. Spring's DataSourceUtils and
  * JdbcTemplate classes automatically perform such a check.
  *

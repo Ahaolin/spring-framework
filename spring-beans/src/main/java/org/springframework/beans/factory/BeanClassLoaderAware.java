@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,10 +38,6 @@ package org.springframework.beans.factory;
 public interface BeanClassLoaderAware extends Aware {
 
 	/**
-     * 将 BeanClassLoader 提供给 bean 实例回调
-     * 在 bean 属性填充之后、初始化回调之前回调，
-     * 例如InitializingBean的InitializingBean.afterPropertiesSet（）方法或自定义init方法
-     *
 	 * Callback that supplies the bean {@link ClassLoader class loader} to
 	 * a bean instance.
 	 * <p>Invoked <i>after</i> the population of normal bean properties but

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,6 @@
 
 package org.springframework.aop.config;
 
-import org.springframework.aop.framework.autoproxy.AbstractAdvisorAutoProxyCreator;
 import org.w3c.dom.Element;
 
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -59,10 +58,8 @@ public abstract class AopNamespaceUtils {
 
 		BeanDefinition beanDefinition = AopConfigUtils.registerAutoProxyCreatorIfNecessary(
 				parserContext.getRegistry(), parserContext.extractSource(sourceElement));
-        // 如果满足条件，则使用 CGLIB 代理
-        useClassProxyingIfNecessary(parserContext.getRegistry(), sourceElement);
-        // 注册组件，并发送通知。便于监听器，做进一步处理
-        registerComponentIfNecessary(beanDefinition, parserContext);
+		useClassProxyingIfNecessary(parserContext.getRegistry(), sourceElement);
+		registerComponentIfNecessary(beanDefinition, parserContext);
 	}
 
 	public static void registerAspectJAutoProxyCreatorIfNecessary(
@@ -74,30 +71,21 @@ public abstract class AopNamespaceUtils {
 		registerComponentIfNecessary(beanDefinition, parserContext);
 	}
 
-    /**
-     * 注册 AUTO_PROXY_CREATOR_BEAN_NAME 对应的 BeanDefinition 对象，即 {@link AbstractAdvisorAutoProxyCreator} 代理创建器
-     *
-     * @param parserContext 解析上下文
-     * @param sourceElement 标签
-     */
-	public static void registerAspectJAnnotationAutoProxyCreatorIfNecessary(ParserContext parserContext, Element sourceElement) {
-	    // 获得 AUTO_PROXY_CREATOR_BEAN_NAME 对应的 BeanDefinition 对象
+	public static void registerAspectJAnnotationAutoProxyCreatorIfNecessary(
+			ParserContext parserContext, Element sourceElement) {
+
 		BeanDefinition beanDefinition = AopConfigUtils.registerAspectJAnnotationAutoProxyCreatorIfNecessary(
 				parserContext.getRegistry(), parserContext.extractSource(sourceElement));
-		// 如果满足条件，则使用 CGLIB 代理
 		useClassProxyingIfNecessary(parserContext.getRegistry(), sourceElement);
-		// 注册组件，并发送通知。便于监听器，做进一步处理
 		registerComponentIfNecessary(beanDefinition, parserContext);
 	}
 
 	private static void useClassProxyingIfNecessary(BeanDefinitionRegistry registry, @Nullable Element sourceElement) {
 		if (sourceElement != null) {
-		    // 解析 "proxy-target-class" 属性。https://blog.csdn.net/oathevil/article/details/7244694
 			boolean proxyTargetClass = Boolean.parseBoolean(sourceElement.getAttribute(PROXY_TARGET_CLASS_ATTRIBUTE));
 			if (proxyTargetClass) {
 				AopConfigUtils.forceAutoProxyCreatorToUseClassProxying(registry);
 			}
-			// 解析 "expose-proxy" 属性。https://www.cnblogs.com/chihirotan/p/7356683.html
 			boolean exposeProxy = Boolean.parseBoolean(sourceElement.getAttribute(EXPOSE_PROXY_ATTRIBUTE));
 			if (exposeProxy) {
 				AopConfigUtils.forceAutoProxyCreatorToExposeProxy(registry);
@@ -107,7 +95,8 @@ public abstract class AopNamespaceUtils {
 
 	private static void registerComponentIfNecessary(@Nullable BeanDefinition beanDefinition, ParserContext parserContext) {
 		if (beanDefinition != null) {
-			parserContext.registerComponent(new BeanComponentDefinition(beanDefinition, AopConfigUtils.AUTO_PROXY_CREATOR_BEAN_NAME));
+			parserContext.registerComponent(
+					new BeanComponentDefinition(beanDefinition, AopConfigUtils.AUTO_PROXY_CREATOR_BEAN_NAME));
 		}
 	}
 

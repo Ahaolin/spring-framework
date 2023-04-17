@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -115,7 +115,7 @@ public interface DeferredResultProcessingInterceptor {
 	 * subsequent interceptors are not invoked
 	 * @param t the error that occurred while request processing
 	 * @return {@code true} if error handling should continue, or {@code false} if
-	 * other interceptors should by bypassed and not be invoked
+	 * other interceptors should be bypassed and not be invoked
 	 * @throws Exception in case of errors
 	 */
 	default <T> boolean handleError(NativeWebRequest request, DeferredResult<T> deferredResult,

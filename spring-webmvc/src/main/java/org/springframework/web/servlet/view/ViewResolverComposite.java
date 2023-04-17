@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,6 +15,13 @@
  */
 
 package org.springframework.web.servlet.view;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+
+import javax.servlet.ServletContext;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
@@ -27,12 +34,6 @@ import org.springframework.web.context.ServletContextAware;
 import org.springframework.web.servlet.View;
 import org.springframework.web.servlet.ViewResolver;
 
-import javax.servlet.ServletContext;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-
 /**
  * A {@link org.springframework.web.servlet.ViewResolver} that delegates to others.
  *
@@ -43,15 +44,10 @@ import java.util.Locale;
 public class ViewResolverComposite implements ViewResolver, Ordered, InitializingBean,
 		ApplicationContextAware, ServletContextAware {
 
-    /**
-     * ViewResolver 数组
-     */
-    private final List<ViewResolver> viewResolvers = new ArrayList<>();
+	private final List<ViewResolver> viewResolvers = new ArrayList<>();
 
-    /**
-     * 顺序，优先级最低
-     */
-    private int order = Ordered.LOWEST_PRECEDENCE;
+	private int order = Ordered.LOWEST_PRECEDENCE;
+
 
 	/**
 	 * Set the list of view viewResolvers to delegate to.
@@ -109,11 +105,8 @@ public class ViewResolverComposite implements ViewResolver, Ordered, Initializin
 	@Override
 	@Nullable
 	public View resolveViewName(String viewName, Locale locale) throws Exception {
-	    // 遍历 viewResolvers 数组，逐个进行解析，但凡成功，则返回该 View 对象
 		for (ViewResolver viewResolver : this.viewResolvers) {
-		    // 执行解析
 			View view = viewResolver.resolveViewName(viewName, locale);
-			// 解析成功，则返回该 View 对象
 			if (view != null) {
 				return view;
 			}

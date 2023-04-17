@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,8 @@
 
 package org.springframework.context.support;
 
+import java.util.Set;
+
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.convert.ConversionService;
@@ -23,8 +25,6 @@ import org.springframework.core.convert.support.ConversionServiceFactory;
 import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.core.convert.support.GenericConversionService;
 import org.springframework.lang.Nullable;
-
-import java.util.Set;
 
 /**
  * A factory providing convenient access to a ConversionService configured with
@@ -69,9 +69,7 @@ public class ConversionServiceFactoryBean implements FactoryBean<ConversionServi
 
 	@Override
 	public void afterPropertiesSet() {
-	    // 创建 DefaultConversionService 对象
 		this.conversionService = createConversionService();
-		// 注册到 ConversionServiceFactory 中
 		ConversionServiceFactory.registerConverters(this.converters, this.conversionService);
 	}
 

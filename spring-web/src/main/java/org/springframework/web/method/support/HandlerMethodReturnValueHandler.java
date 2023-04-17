@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,8 +31,6 @@ import org.springframework.web.context.request.NativeWebRequest;
 public interface HandlerMethodReturnValueHandler {
 
 	/**
-     * 是否支持该类型
-     *
 	 * Whether the given {@linkplain MethodParameter method return type} is
 	 * supported by this handler.
 	 * @param returnType the method return type to check
@@ -42,8 +40,6 @@ public interface HandlerMethodReturnValueHandler {
 	boolean supportsReturnType(MethodParameter returnType);
 
 	/**
-     * 处理返回值，设置到 {@param mavContainer} 中
-     *
 	 * Handle the given return value by adding attributes to the model and
 	 * setting a view or setting the
 	 * {@link ModelAndViewContainer#setRequestHandled} flag to {@code true}

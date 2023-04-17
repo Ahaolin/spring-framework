@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,9 +16,9 @@
 
 package org.springframework.web.servlet;
 
-import org.springframework.lang.Nullable;
-
 import java.util.Locale;
+
+import org.springframework.lang.Nullable;
 
 /**
  * Interface to be implemented by objects that can resolve views by name.
@@ -32,14 +32,12 @@ import java.util.Locale;
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @see org.springframework.web.servlet.view.InternalResourceViewResolver
- * @see org.springframework.web.servlet.view.ResourceBundleViewResolver
- * @see org.springframework.web.servlet.view.XmlViewResolver
+ * @see org.springframework.web.servlet.view.ContentNegotiatingViewResolver
+ * @see org.springframework.web.servlet.view.BeanNameViewResolver
  */
 public interface ViewResolver {
 
 	/**
-     * 根据视图名和国际化，获得最终的 View 对象
-     *
 	 * Resolve the given view by name.
 	 * <p>Note: To allow for ViewResolver chaining, a ViewResolver should
 	 * return {@code null} if a view with the given name is not defined in it.

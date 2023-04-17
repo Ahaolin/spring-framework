@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,8 +21,6 @@ import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.lang.Nullable;
 
 /**
- * 代理方法调用接口
- *
  * Extension of the AOP Alliance {@link org.aopalliance.intercept.MethodInvocation}
  * interface, allowing access to the proxy that the method invocation was made through.
  *

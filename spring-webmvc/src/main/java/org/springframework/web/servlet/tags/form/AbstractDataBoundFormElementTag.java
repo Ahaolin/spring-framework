@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,7 @@
 package org.springframework.web.servlet.tags.form;
 
 import java.beans.PropertyEditor;
+
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
@@ -34,7 +35,7 @@ import org.springframework.web.servlet.tags.NestedPathTag;
  * Base tag for all data-binding aware JSP form tags.
  *
  * <p>Provides the common {@link #setPath path} and {@link #setId id} properties.
- * Provides sub-classes with utility methods for accessing the {@link BindStatus}
+ * Provides subclasses with utility methods for accessing the {@link BindStatus}
  * of their bound value and also for {@link #writeOptionalAttribute interacting}
  * with the {@link TagWriter}.
  *
@@ -110,10 +111,10 @@ public abstract class AbstractDataBoundFormElementTag extends AbstractFormTag im
 
 	/**
 	 * Writes the default set of attributes to the supplied {@link TagWriter}.
-	 * Further abstract sub-classes should override this method to add in
+	 * Further, abstract subclasses should override this method to add in
 	 * any additional default attributes but <strong>must</strong> remember
 	 * to call the {@code super} method.
-	 * <p>Concrete sub-classes should call this method when/if they want
+	 * <p>Concrete subclasses should call this method when/if they want
 	 * to render default attributes.
 	 * @param tagWriter the {@link TagWriter} to which any attributes are to be written
 	 */

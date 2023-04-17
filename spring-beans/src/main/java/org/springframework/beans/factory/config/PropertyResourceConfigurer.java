@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,16 +16,16 @@
 
 package org.springframework.beans.factory.config;
 
+import java.io.IOException;
+import java.util.Enumeration;
+import java.util.Properties;
+
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.core.Ordered;
 import org.springframework.core.PriorityOrdered;
 import org.springframework.core.io.support.PropertiesLoaderSupport;
 import org.springframework.util.ObjectUtils;
-
-import java.io.IOException;
-import java.util.Enumeration;
-import java.util.Properties;
 
 /**
  * Allows for configuration of individual bean property values from a property resource,
@@ -77,17 +77,15 @@ public abstract class PropertyResourceConfigurer extends PropertiesLoaderSupport
 	@Override
 	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
 		try {
-		    // 返回合并的 Properties 实例
 			Properties mergedProps = mergeProperties();
 
 			// Convert the merged properties, if necessary.
-            // 转换合并属性
 			convertProperties(mergedProps);
 
 			// Let the subclass process the properties.
-            // 子类处理
 			processProperties(beanFactory, mergedProps);
-		} catch (IOException ex) {
+		}
+		catch (IOException ex) {
 			throw new BeanInitializationException("Could not load properties", ex);
 		}
 	}

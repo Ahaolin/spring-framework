@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +20,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -46,7 +47,7 @@ import org.springframework.web.util.NestedServletException;
  * @since 4.1
  * @see GroovyMarkupViewResolver
  * @see GroovyMarkupConfigurer
- * @see <a href="http://groovy-lang.org/templating.html#_the_markuptemplateengine">
+ * @see <a href="https://groovy-lang.org/templating.html#_the_markuptemplateengine">
  * Groovy Markup Template engine documentation</a>
  */
 public class GroovyMarkupView extends AbstractTemplateView {

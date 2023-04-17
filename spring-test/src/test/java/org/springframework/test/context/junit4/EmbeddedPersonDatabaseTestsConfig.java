@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,7 +25,7 @@ import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.transaction.PlatformTransactionManager;
 
 /**
- * Shared configuration for tests that need an embedded database pre-loaded
+ * Shared configuration for tests that need an embedded database preloaded
  * with the schema for the 'person' table.
  *
  * @author Sam Brannen

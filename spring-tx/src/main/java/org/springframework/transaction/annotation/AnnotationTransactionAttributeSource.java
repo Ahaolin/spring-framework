@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,12 +16,6 @@
 
 package org.springframework.transaction.annotation;
 
-import org.springframework.lang.Nullable;
-import org.springframework.transaction.interceptor.AbstractFallbackTransactionAttributeSource;
-import org.springframework.transaction.interceptor.TransactionAttribute;
-import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
-
 import java.io.Serializable;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
@@ -30,9 +24,13 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import org.springframework.lang.Nullable;
+import org.springframework.transaction.interceptor.AbstractFallbackTransactionAttributeSource;
+import org.springframework.transaction.interceptor.TransactionAttribute;
+import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
+
 /**
- * 基于 {@link Transactional} 注解的事务的 TransactionAttributeSource 实现类
- *
  * Implementation of the
  * {@link org.springframework.transaction.interceptor.TransactionAttributeSource}
  * interface for working with transaction metadata in JDK 1.5+ annotation format.
@@ -58,30 +56,18 @@ import java.util.Set;
 public class AnnotationTransactionAttributeSource extends AbstractFallbackTransactionAttributeSource
 		implements Serializable {
 
-    /**
-     * 是否开启 JTA ，通过 {@link javax.transaction.Transaction} 来判断
-     */
 	private static final boolean jta12Present;
-    /**
-     * 是否开启 EJB ，通过 {@link TransactionAttribute} 来判断
-     */
+
 	private static final boolean ejb3Present;
 
 	static {
-	    // 初始化 jta12Present、ejb3Present 属性
 		ClassLoader classLoader = AnnotationTransactionAttributeSource.class.getClassLoader();
 		jta12Present = ClassUtils.isPresent("javax.transaction.Transactional", classLoader);
 		ejb3Present = ClassUtils.isPresent("javax.ejb.TransactionAttribute", classLoader);
 	}
 
-    /**
-     * 是否仅仅扫描 public 方法
-     */
 	private final boolean publicMethodsOnly;
 
-    /**
-     * 扫描事务注解的解析器的集合
-     */
 	private final Set<TransactionAnnotationParser> annotationParsers;
 
 
@@ -107,7 +93,6 @@ public class AnnotationTransactionAttributeSource extends AbstractFallbackTransa
 		this.publicMethodsOnly = publicMethodsOnly;
 		if (jta12Present || ejb3Present) {
 			this.annotationParsers = new LinkedHashSet<>(4);
-			// 【重要】SpringTransactionAnnotationParser 对象
 			this.annotationParsers.add(new SpringTransactionAnnotationParser());
 			if (jta12Present) {
 				this.annotationParsers.add(new JtaTransactionAnnotationParser());
@@ -115,8 +100,8 @@ public class AnnotationTransactionAttributeSource extends AbstractFallbackTransa
 			if (ejb3Present) {
 				this.annotationParsers.add(new Ejb3TransactionAnnotationParser());
 			}
-		} else {
-		    // 【重要】SpringTransactionAnnotationParser 对象
+		}
+		else {
 			this.annotationParsers = Collections.singleton(new SpringTransactionAnnotationParser());
 		}
 	}
@@ -151,20 +136,23 @@ public class AnnotationTransactionAttributeSource extends AbstractFallbackTransa
 		this.annotationParsers = annotationParsers;
 	}
 
-    /**
-     * @param clazz the class to retrieve the attribute for 类
-     * @return 类的事务属性
-     */
+
+	@Override
+	public boolean isCandidateClass(Class<?> targetClass) {
+		for (TransactionAnnotationParser parser : this.annotationParsers) {
+			if (parser.isCandidateClass(targetClass)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	@Override
 	@Nullable
 	protected TransactionAttribute findTransactionAttribute(Class<?> clazz) {
 		return determineTransactionAttribute(clazz);
 	}
 
-    /**
-     * @param method the method to retrieve the attribute for 方法
-     * @return 方法的事务属性
-     */
 	@Override
 	@Nullable
 	protected TransactionAttribute findTransactionAttribute(Method method) {
@@ -183,9 +171,8 @@ public class AnnotationTransactionAttributeSource extends AbstractFallbackTransa
 	 */
 	@Nullable
 	protected TransactionAttribute determineTransactionAttribute(AnnotatedElement element) {
-	    // 遍历 TransactionAnnotationParser 数组，解析对应的注解
-		for (TransactionAnnotationParser annotationParser : this.annotationParsers) {
-			TransactionAttribute attr = annotationParser.parseTransactionAnnotation(element);
+		for (TransactionAnnotationParser parser : this.annotationParsers) {
+			TransactionAttribute attr = parser.parseTransactionAnnotation(element);
 			if (attr != null) {
 				return attr;
 			}
@@ -203,7 +190,7 @@ public class AnnotationTransactionAttributeSource extends AbstractFallbackTransa
 
 
 	@Override
-	public boolean equals(Object other) {
+	public boolean equals(@Nullable Object other) {
 		if (this == other) {
 			return true;
 		}

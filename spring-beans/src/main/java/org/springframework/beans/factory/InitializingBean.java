@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,9 +34,6 @@ package org.springframework.beans.factory;
 public interface InitializingBean {
 
 	/**
-     * 该方法在 BeanFactory 设置完了所有属性之后被调用
-     * 该方法允许 bean 实例设置了所有 bean 属性时执行初始化工作，如果该过程出现了错误则需要抛出异常
-     *
 	 * Invoked by the containing {@code BeanFactory} after it has set all bean properties
 	 * and satisfied {@link BeanFactoryAware}, {@code ApplicationContextAware} etc.
 	 * <p>This method allows the bean instance to perform validation of its overall

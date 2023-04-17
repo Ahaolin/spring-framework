@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -36,15 +36,16 @@ import org.springframework.util.StringValueResolver;
  * Example XML bean definition:
  *
  * <pre class="code">
- * &lt;bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource"/&gt;
- *   &lt;property name="driverClassName" value="${driver}"/&gt;
- *   &lt;property name="url" value="jdbc:${dbname}"/&gt;
+ * &lt;bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource"&gt;
+ *   &lt;property name="driverClassName" value="${driver}" /&gt;
+ *   &lt;property name="url" value="jdbc:${dbname}" /&gt;
  * &lt;/bean&gt;
  * </pre>
  *
  * Example properties file:
  *
- * <pre class="code">driver=com.mysql.jdbc.Driver
+ * <pre class="code">
+ * driver=com.mysql.jdbc.Driver
  * dbname=mysql:mydb</pre>
  *
  * Annotated bean definitions may take advantage of property replacement using
@@ -56,7 +57,8 @@ import org.springframework.util.StringValueResolver;
  * in bean references. Furthermore, placeholder values can also cross-reference
  * other placeholders, like:
  *
- * <pre class="code">rootPath=myrootdir
+ * <pre class="code">
+ * rootPath=myrootdir
  * subPath=${rootPath}/subdir</pre>
  *
  * In contrast to {@link PropertyOverrideConfigurer}, subclasses of this type allow
@@ -71,13 +73,13 @@ import org.springframework.util.StringValueResolver;
  *
  * <p>Default property values can be defined globally for each configurer instance
  * via the {@link #setProperties properties} property, or on a property-by-property basis
- * using the default value separator which is {@code ":"} by default and
- * customizable via {@link #setValueSeparator(String)}.
+ * using the value separator which is {@code ":"} by default and customizable via
+ * {@link #setValueSeparator(String)}.
  *
  * <p>Example XML property with default value:
  *
  * <pre class="code">
- *   <property name="url" value="jdbc:${dbname:defaultdb}"/>
+ *   &lt;property name="url" value="jdbc:${dbname:defaultdb}" /&gt;
  * </pre>
  *
  * @author Chris Beams
@@ -209,34 +211,32 @@ public abstract class PlaceholderConfigurerSupport extends PropertyResourceConfi
 		this.beanFactory = beanFactory;
 	}
 
+
 	protected void doProcessProperties(ConfigurableListableBeanFactory beanFactoryToProcess,
 			StringValueResolver valueResolver) {
-	    // 创建 BeanDefinitionVisitor 对象
+
 		BeanDefinitionVisitor visitor = new BeanDefinitionVisitor(valueResolver);
 
 		String[] beanNames = beanFactoryToProcess.getBeanDefinitionNames();
 		for (String curName : beanNames) {
-            // 校验
 			// Check that we're not parsing our own bean definition,
 			// to avoid failing on unresolvable placeholders in properties file locations.
-			if (!(curName.equals(this.beanName) // 1. 当前实例 PlaceholderConfigurerSupport 不在解析范围内
-                    && beanFactoryToProcess.equals(this.beanFactory))) { // 2. 同一个 Spring 容器
+			if (!(curName.equals(this.beanName) && beanFactoryToProcess.equals(this.beanFactory))) {
 				BeanDefinition bd = beanFactoryToProcess.getBeanDefinition(curName);
 				try {
 					visitor.visitBeanDefinition(bd);
-				} catch (Exception ex) {
+				}
+				catch (Exception ex) {
 					throw new BeanDefinitionStoreException(bd.getResourceDescription(), curName, ex.getMessage(), ex);
 				}
 			}
 		}
 
 		// New in Spring 2.5: resolve placeholders in alias target names and aliases as well.
-        // 别名的占位符
 		beanFactoryToProcess.resolveAliases(valueResolver);
 
 		// New in Spring 3.0: resolve placeholders in embedded values such as annotation attributes.
-        // 解析嵌入值的占位符，例如注释属性
-        beanFactoryToProcess.addEmbeddedValueResolver(valueResolver);
+		beanFactoryToProcess.addEmbeddedValueResolver(valueResolver);
 	}
 
 }

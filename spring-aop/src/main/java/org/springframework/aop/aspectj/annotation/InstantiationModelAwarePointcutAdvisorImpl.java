@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,8 +16,14 @@
 
 package org.springframework.aop.aspectj.annotation;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
+import java.lang.reflect.Method;
+
 import org.aopalliance.aop.Advice;
 import org.aspectj.lang.reflect.PerClauseKind;
+
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.aspectj.AspectJExpressionPointcut;
 import org.springframework.aop.aspectj.AspectJPrecedenceInformation;
@@ -26,11 +32,6 @@ import org.springframework.aop.aspectj.annotation.AbstractAspectJAdvisorFactory.
 import org.springframework.aop.support.DynamicMethodMatcherPointcut;
 import org.springframework.aop.support.Pointcuts;
 import org.springframework.lang.Nullable;
-
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.Serializable;
-import java.lang.reflect.Method;
 
 /**
  * Internal implementation of AspectJPointcutAdvisor.
@@ -46,72 +47,38 @@ final class InstantiationModelAwarePointcutAdvisorImpl
 
 	private static final Advice EMPTY_ADVICE = new Advice() {};
 
-    /**
-     * 切点的表达式类
-     */
+
 	private final AspectJExpressionPointcut declaredPointcut;
-    /**
-     * 切面的类
-     */
+
 	private final Class<?> declaringClass;
-    /**
-     * 切点的方法名
-     */
+
 	private final String methodName;
-    /**
-     * 切点的参数集合
-     */
+
 	private final Class<?>[] parameterTypes;
-    /**
-     * 切点的方法对象
-     */
+
 	private transient Method aspectJAdviceMethod;
-    /**
-     * ReflectiveAspectJAdvisorFactory 实例
-     */
+
 	private final AspectJAdvisorFactory aspectJAdvisorFactory;
-    /**
-     * MetadataAwareAspectInstanceFactory 实例
-     */
+
 	private final MetadataAwareAspectInstanceFactory aspectInstanceFactory;
-    /**
-     * 切面的顺序
-     */
+
 	private final int declarationOrder;
-    /**
-     * 切点的 Bean 的名字。
-     *
-     * 这样，在后续的 Advice 的执行时，可以获取到对应的 Bean 对象。
-     */
+
 	private final String aspectName;
-    /**
-     * 切点对象
-     */
+
 	private final Pointcut pointcut;
 
-    /**
-     * 是否延迟初始化
-     */
 	private final boolean lazy;
 
-    /**
-     * 实例化的 Advice 对象。
-     *
-     * 相比它来说，InstantiationModelAwarePointcutAdvisorImpl 是  Advisor 对象。
-     */
 	@Nullable
 	private Advice instantiatedAdvice;
 
-    /**
-     * 是否前置切面
-     */
 	@Nullable
 	private Boolean isBeforeAdvice;
-    /**
-     * 是否后置切面
-     */
+
 	@Nullable
 	private Boolean isAfterAdvice;
+
 
 	public InstantiationModelAwarePointcutAdvisorImpl(AspectJExpressionPointcut declaredPointcut,
 			Method aspectJAdviceMethod, AspectJAdvisorFactory aspectJAdvisorFactory,
@@ -127,7 +94,6 @@ final class InstantiationModelAwarePointcutAdvisorImpl
 		this.declarationOrder = declarationOrder;
 		this.aspectName = aspectName;
 
-        // 根据切面元数据判断是否要延迟实例化，一般为否 TODO 芋艿，后续详细调试下。
 		if (aspectInstanceFactory.getAspectMetadata().isLazilyInstantiated()) {
 			// Static part of the pointcut is a lazy type.
 			Pointcut preInstantiationPointcut = Pointcuts.union(
@@ -139,11 +105,11 @@ final class InstantiationModelAwarePointcutAdvisorImpl
 			this.pointcut = new PerTargetInstantiationModelPointcut(
 					this.declaredPointcut, preInstantiationPointcut, aspectInstanceFactory);
 			this.lazy = true;
-		} else {
+		}
+		else {
 			// A singleton aspect.
 			this.pointcut = this.declaredPointcut;
 			this.lazy = false;
-            // 实例化 Advice 实例
 			this.instantiatedAdvice = instantiateAdvice(this.declaredPointcut);
 		}
 	}
@@ -179,12 +145,6 @@ final class InstantiationModelAwarePointcutAdvisorImpl
 		return this.instantiatedAdvice;
 	}
 
-    /**
-     * 实例化 Advice 对象
-     *
-     * @param pointcut 切点对象
-     * @return Advice 对象
-     */
 	private Advice instantiateAdvice(AspectJExpressionPointcut pointcut) {
 		Advice advice = this.aspectJAdvisorFactory.getAdvice(this.aspectJAdviceMethod, pointcut,
 				this.aspectInstanceFactory, this.declarationOrder, this.aspectName);
@@ -303,7 +263,7 @@ final class InstantiationModelAwarePointcutAdvisorImpl
 	 * Note that this is a <i>dynamic</i> pointcut; otherwise it might be optimized out
 	 * if it does not at first match statically.
 	 */
-	private final class PerTargetInstantiationModelPointcut extends DynamicMethodMatcherPointcut {
+	private static final class PerTargetInstantiationModelPointcut extends DynamicMethodMatcherPointcut {
 
 		private final AspectJExpressionPointcut declaredPointcut;
 

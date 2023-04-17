@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -37,9 +37,10 @@ import org.springframework.util.Assert;
  * configuration. Each candidate is given a chance to
  * {@linkplain #processContextConfiguration process} the
  * {@link ContextConfigurationAttributes} for each class in the test class hierarchy
- * that is annotated with {@link ContextConfiguration @ContextConfiguration}, and
- * the candidate that supports the merged, processed configuration will be used to
- * actually {@linkplain #loadContext load} the context.
+ * and enclosing class hierarchy that is annotated with
+ * {@link ContextConfiguration @ContextConfiguration}, and the candidate that
+ * supports the merged, processed configuration will be used to actually
+ * {@linkplain #loadContext load} the context.
  *
  * <p>Any reference to an <em>XML-based loader</em> can be interpreted to mean
  * a context loader that supports only XML configuration files or one that

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,12 +35,9 @@ package org.springframework.core.io;
  * @see DefaultResourceLoader
  * @see org.springframework.context.support.FileSystemXmlApplicationContext
  */
-@SuppressWarnings("JavadocReference")
 public class FileSystemResourceLoader extends DefaultResourceLoader {
 
 	/**
-     * 返回 FileSystemContextResource
-     *
 	 * Resolve resource paths as file system paths.
 	 * <p>Note: Even if a given path starts with a slash, it will get
 	 * interpreted as relative to the current VM working directory.
@@ -51,11 +48,9 @@ public class FileSystemResourceLoader extends DefaultResourceLoader {
 	 */
 	@Override
 	protected Resource getResourceByPath(String path) {
-	    // 截取首 /
 		if (path.startsWith("/")) {
 			path = path.substring(1);
 		}
-		// 创建 FileSystemContextResource 类型的资源
 		return new FileSystemContextResource(path);
 	}
 

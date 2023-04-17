@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,6 +25,7 @@ import reactor.core.publisher.Mono;
 import org.springframework.core.log.LogFormatUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.client.reactive.ClientHttpConnector;
 import org.springframework.http.client.reactive.ClientHttpResponse;
@@ -97,15 +98,18 @@ public abstract class ExchangeFunctions {
 			Assert.notNull(clientRequest, "ClientRequest must not be null");
 			HttpMethod httpMethod = clientRequest.method();
 			URI url = clientRequest.url();
-			String logPrefix = clientRequest.logPrefix();
 
 			return this.connector
 					.connect(httpMethod, url, httpRequest -> clientRequest.writeTo(httpRequest, this.strategies))
 					.doOnRequest(n -> logRequest(clientRequest))
-					.doOnCancel(() -> logger.debug(logPrefix + "Cancel signal (to close connection)"))
+					.doOnCancel(() -> logger.debug(clientRequest.logPrefix() + "Cancel signal (to close connection)"))
+					.onErrorResume(WebClientUtils.WRAP_EXCEPTION_PREDICATE, t -> wrapException(t, clientRequest))
 					.map(httpResponse -> {
+						String logPrefix = getLogPrefix(clientRequest, httpResponse);
 						logResponse(httpResponse, logPrefix);
-						return new DefaultClientResponse(httpResponse, this.strategies, logPrefix);
+						return new DefaultClientResponse(
+								httpResponse, this.strategies, logPrefix, httpMethod.name() + " " + url,
+								() -> createRequest(clientRequest));
 					});
 		}
 
@@ -114,6 +118,10 @@ public abstract class ExchangeFunctions {
 					request.logPrefix() + "HTTP " + request.method() + " " + request.url() +
 							(traceOn ? ", headers=" + formatHeaders(request.headers()) : "")
 			);
+		}
+
+		private String getLogPrefix(ClientRequest request, ClientHttpResponse response) {
+			return request.logPrefix() + "[" + response.getId() + "] ";
 		}
 
 		private void logResponse(ClientHttpResponse response, String logPrefix) {
@@ -127,6 +135,35 @@ public abstract class ExchangeFunctions {
 
 		private String formatHeaders(HttpHeaders headers) {
 			return this.enableLoggingRequestDetails ? headers.toString() : headers.isEmpty() ? "{}" : "{masked}";
+		}
+
+		private <T> Mono<T> wrapException(Throwable t, ClientRequest r) {
+			return Mono.error(() -> new WebClientRequestException(t, r.method(), r.url(), r.headers()));
+		}
+
+		private HttpRequest createRequest(ClientRequest request) {
+			return new HttpRequest() {
+
+				@Override
+				public HttpMethod getMethod() {
+					return request.method();
+				}
+
+				@Override
+				public String getMethodValue() {
+					return request.method().name();
+				}
+
+				@Override
+				public URI getURI() {
+					return request.url();
+				}
+
+				@Override
+				public HttpHeaders getHeaders() {
+					return request.headers();
+				}
+			};
 		}
 	}
 

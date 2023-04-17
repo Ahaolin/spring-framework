@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -105,11 +105,18 @@ abstract class WebSocketNamespaceUtils {
 
 			Element interceptElem = DomUtils.getChildElementByTagName(element, "handshake-interceptors");
 			ManagedList<Object> interceptors = WebSocketNamespaceUtils.parseBeanSubElements(interceptElem, context);
+
 			String allowedOrigins = element.getAttribute("allowed-origins");
 			List<String> origins = Arrays.asList(StringUtils.tokenizeToStringArray(allowedOrigins, ","));
 			sockJsServiceDef.getPropertyValues().add("allowedOrigins", origins);
+
+			String allowedOriginPatterns = element.getAttribute("allowed-origin-patterns");
+			List<String> originPatterns = Arrays.asList(StringUtils.tokenizeToStringArray(allowedOriginPatterns, ","));
+			sockJsServiceDef.getPropertyValues().add("allowedOriginPatterns", originPatterns);
+
 			RootBeanDefinition originHandshakeInterceptor = new RootBeanDefinition(OriginHandshakeInterceptor.class);
 			originHandshakeInterceptor.getPropertyValues().add("allowedOrigins", origins);
+			originHandshakeInterceptor.getPropertyValues().add("allowedOriginPatterns", originPatterns);
 			interceptors.add(originHandshakeInterceptor);
 			sockJsServiceDef.getPropertyValues().add("handshakeInterceptors", interceptors);
 

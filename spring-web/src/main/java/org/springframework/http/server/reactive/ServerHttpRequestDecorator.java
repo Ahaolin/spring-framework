@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,7 +32,7 @@ import org.springframework.util.MultiValueMap;
 
 /**
  * Wraps another {@link ServerHttpRequest} and delegates all methods to it.
- * Sub-classes can override specific methods selectively.
+ * Subclasses can override specific methods selectively.
  *
  * @author Rossen Stoyanchev
  * @since 5.0
@@ -97,12 +97,19 @@ public class ServerHttpRequestDecorator implements ServerHttpRequest {
 	}
 
 	@Override
+	@Nullable
+	public InetSocketAddress getLocalAddress() {
+		return getDelegate().getLocalAddress();
+	}
+
+	@Override
+	@Nullable
 	public InetSocketAddress getRemoteAddress() {
 		return getDelegate().getRemoteAddress();
 	}
 
-	@Nullable
 	@Override
+	@Nullable
 	public SslInfo getSslInfo() {
 		return getDelegate().getSslInfo();
 	}
@@ -110,6 +117,28 @@ public class ServerHttpRequestDecorator implements ServerHttpRequest {
 	@Override
 	public Flux<DataBuffer> getBody() {
 		return getDelegate().getBody();
+	}
+
+
+	/**
+	 * Return the native request of the underlying server API, if possible,
+	 * also unwrapping {@link ServerHttpRequestDecorator} if necessary.
+	 * @param request the request to check
+	 * @param <T> the expected native request type
+	 * @throws IllegalArgumentException if the native request can't be obtained
+	 * @since 5.3.3
+	 */
+	public static <T> T getNativeRequest(ServerHttpRequest request) {
+		if (request instanceof AbstractServerHttpRequest) {
+			return ((AbstractServerHttpRequest) request).getNativeRequest();
+		}
+		else if (request instanceof ServerHttpRequestDecorator) {
+			return getNativeRequest(((ServerHttpRequestDecorator) request).getDelegate());
+		}
+		else {
+			throw new IllegalArgumentException(
+					"Can't find native request in " + request.getClass().getName());
+		}
 	}
 
 

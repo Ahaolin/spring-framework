@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,10 +33,10 @@ import org.springframework.web.servlet.RequestToViewNameTranslator;
  * as the actual return value is left as-is allowing the configured
  * {@link RequestToViewNameTranslator} to select a view name by convention.
  *
- * <p>A String return value can be interpreted in more than one ways depending
- * on the presence of annotations like {@code @ModelAttribute} or
- * {@code @ResponseBody}. Therefore this handler should be configured after
- * the handlers that support these annotations.
+ * <p>A String return value can be interpreted in more than one way depending on
+ * the presence of annotations like {@code @ModelAttribute} or {@code @ResponseBody}.
+ * Therefore, this handler should be configured after the handlers that support these
+ * annotations.
  *
  * @author Rossen Stoyanchev
  * @author Juergen Hoeller
@@ -44,19 +44,15 @@ import org.springframework.web.servlet.RequestToViewNameTranslator;
  */
 public class ViewNameMethodReturnValueHandler implements HandlerMethodReturnValueHandler {
 
-    /**
-     * 重定向的表达式的数组
-     */
 	@Nullable
 	private String[] redirectPatterns;
 
+
 	/**
-	 * Configure one more simple patterns (as described in
-	 * {@link PatternMatchUtils#simpleMatch}) to use in order to recognize
-	 * custom redirect prefixes in addition to "redirect:".
-	 * <p>Note that simply configuring this property will not make a custom
-	 * redirect prefix work. There must be a custom View that recognizes the
-	 * prefix as well.
+	 * Configure one more simple patterns (as described in {@link PatternMatchUtils#simpleMatch})
+	 * to use in order to recognize custom redirect prefixes in addition to "redirect:".
+	 * <p>Note that simply configuring this property will not make a custom redirect prefix work.
+	 * There must be a custom View that recognizes the prefix as well.
 	 * @since 4.1
 	 */
 	public void setRedirectPatterns(@Nullable String... redirectPatterns) {
@@ -71,6 +67,7 @@ public class ViewNameMethodReturnValueHandler implements HandlerMethodReturnValu
 		return this.redirectPatterns;
 	}
 
+
 	@Override
 	public boolean supportsReturnType(MethodParameter returnType) {
 		Class<?> paramType = returnType.getParameterType();
@@ -80,17 +77,15 @@ public class ViewNameMethodReturnValueHandler implements HandlerMethodReturnValu
 	@Override
 	public void handleReturnValue(@Nullable Object returnValue, MethodParameter returnType,
 			ModelAndViewContainer mavContainer, NativeWebRequest webRequest) throws Exception {
-	    // 如果是 String 类型
+
 		if (returnValue instanceof CharSequence) {
-		    // 设置视图名到 mavContainer 中
 			String viewName = returnValue.toString();
 			mavContainer.setViewName(viewName);
-			// 如果是重定向，则标记到 mavContainer 中
 			if (isRedirectViewName(viewName)) {
 				mavContainer.setRedirectModelScenario(true);
 			}
-        // 如果是非 String 类型，而且非 void ，则抛出 UnsupportedOperationException 异常
-		} else if (returnValue != null){
+		}
+		else if (returnValue != null) {
 			// should not happen
 			throw new UnsupportedOperationException("Unexpected return type: " +
 					returnType.getParameterType().getName() + " in method: " + returnType.getMethod());
@@ -106,8 +101,7 @@ public class ViewNameMethodReturnValueHandler implements HandlerMethodReturnValu
 	 * reference; "false" otherwise.
 	 */
 	protected boolean isRedirectViewName(String viewName) {
-		return (PatternMatchUtils.simpleMatch(this.redirectPatterns, viewName) // 符合 redirectPatterns 表达式
-                || viewName.startsWith("redirect:")); // 以 redirect: 开头
+		return (PatternMatchUtils.simpleMatch(this.redirectPatterns, viewName) || viewName.startsWith("redirect:"));
 	}
 
 }

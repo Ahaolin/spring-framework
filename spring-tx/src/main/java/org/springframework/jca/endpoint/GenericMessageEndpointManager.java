@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -161,7 +161,7 @@ public class GenericMessageEndpointManager implements SmartLifecycle, Initializi
 
 	private int phase = DEFAULT_PHASE;
 
-	private volatile boolean running = false;
+	private volatile boolean running;
 
 	private final Object lifecycleMonitor = new Object();
 
@@ -240,9 +240,9 @@ public class GenericMessageEndpointManager implements SmartLifecycle, Initializi
 	/**
 	 * Specify the phase in which this endpoint manager should be started
 	 * and stopped. The startup order proceeds from lowest to highest, and
-	 * the shutdown order is the reverse of that. By default this value is
-	 * Integer.MAX_VALUE meaning that this endpoint manager starts as late
-	 * as possible and stops as soon as possible.
+	 * the shutdown order is the reverse of that. By default, this value is
+	 * {@code Integer.MAX_VALUE} meaning that this endpoint manager starts
+	 * as late as possible and stops as soon as possible.
 	 */
 	public void setPhase(int phase) {
 		this.phase = phase;

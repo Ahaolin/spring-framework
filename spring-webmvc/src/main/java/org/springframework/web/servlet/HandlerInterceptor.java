@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,15 +16,13 @@
 
 package org.springframework.web.servlet;
 
-import org.springframework.lang.Nullable;
-import org.springframework.web.method.HandlerMethod;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.springframework.lang.Nullable;
+import org.springframework.web.method.HandlerMethod;
+
 /**
- * 处理器拦截器接口
- *
  * Workflow interface that allows for customized handler execution chains.
  * Applications can register any number of existing or custom interceptors
  * for certain groups of handlers, to add common preprocessing behavior
@@ -68,7 +66,6 @@ import javax.servlet.http.HttpServletResponse;
  * @author Juergen Hoeller
  * @since 20.06.2003
  * @see HandlerExecutionChain#getInterceptors
- * @see org.springframework.web.servlet.handler.HandlerInterceptorAdapter
  * @see org.springframework.web.servlet.handler.AbstractHandlerMapping#setInterceptors
  * @see org.springframework.web.servlet.handler.UserRoleAuthorizationInterceptor
  * @see org.springframework.web.servlet.i18n.LocaleChangeInterceptor
@@ -78,14 +75,13 @@ import javax.servlet.http.HttpServletResponse;
 public interface HandlerInterceptor {
 
 	/**
-     * 拦截处理器，在 {@link HandlerAdapter#handle(HttpServletRequest, HttpServletResponse, Object)} 执行之前
-     *
-	 * Intercept the execution of a handler. Called after HandlerMapping determined
-	 * an appropriate handler object, but before HandlerAdapter invokes the handler.
+	 * Interception point before the execution of a handler. Called after
+	 * HandlerMapping determined an appropriate handler object, but before
+	 * HandlerAdapter invokes the handler.
 	 * <p>DispatcherServlet processes a handler in an execution chain, consisting
 	 * of any number of interceptors, with the handler itself at the end.
 	 * With this method, each interceptor can decide to abort the execution chain,
-	 * typically sending a HTTP error or writing a custom response.
+	 * typically sending an HTTP error or writing a custom response.
 	 * <p><strong>Note:</strong> special considerations apply for asynchronous
 	 * request processing. For more details see
 	 * {@link org.springframework.web.servlet.AsyncHandlerInterceptor}.
@@ -100,15 +96,15 @@ public interface HandlerInterceptor {
 	 */
 	default boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
 			throws Exception {
+
 		return true;
 	}
 
 	/**
-     * 拦截处理器，在 {@link HandlerAdapter#handle(HttpServletRequest, HttpServletResponse, Object)} 执行成功之后
-     *
-	 * Intercept the execution of a handler. Called after HandlerAdapter actually
-	 * invoked the handler, but before the DispatcherServlet renders the view.
-	 * Can expose additional model objects to the view via the given ModelAndView.
+	 * Interception point after successful execution of a handler.
+	 * Called after HandlerAdapter actually invoked the handler, but before the
+	 * DispatcherServlet renders the view. Can expose additional model objects
+	 * to the view via the given ModelAndView.
 	 * <p>DispatcherServlet processes a handler in an execution chain, consisting
 	 * of any number of interceptors, with the handler itself at the end.
 	 * With this method, each interceptor can post-process an execution,
@@ -119,7 +115,7 @@ public interface HandlerInterceptor {
 	 * <p>The default implementation is empty.
 	 * @param request current HTTP request
 	 * @param response current HTTP response
-	 * @param handler handler (or {@link HandlerMethod}) that started asynchronous
+	 * @param handler the handler (or {@link HandlerMethod}) that started asynchronous
 	 * execution, for type and/or instance examination
 	 * @param modelAndView the {@code ModelAndView} that the handler returned
 	 * (can also be {@code null})
@@ -130,10 +126,6 @@ public interface HandlerInterceptor {
 	}
 
 	/**
-     * 拦截处理器，在 {@link HandlerAdapter#handle(HttpServletRequest, HttpServletResponse, Object)} 执行完之后，无论成功还是失败
-     *
-     * 并且，只有该处理器 {@link #preHandle(HttpServletRequest, HttpServletResponse, Object)} 执行成功之后，才会被执行
-     *
 	 * Callback after completion of request processing, that is, after rendering
 	 * the view. Will be called on any outcome of handler execution, thus allows
 	 * for proper resource cleanup.
@@ -148,9 +140,10 @@ public interface HandlerInterceptor {
 	 * <p>The default implementation is empty.
 	 * @param request current HTTP request
 	 * @param response current HTTP response
-	 * @param handler handler (or {@link HandlerMethod}) that started asynchronous
+	 * @param handler the handler (or {@link HandlerMethod}) that started asynchronous
 	 * execution, for type and/or instance examination
-	 * @param ex exception thrown on handler execution, if any
+	 * @param ex any exception thrown on handler execution, if any; this does not
+	 * include exceptions that have been handled through an exception resolver
 	 * @throws Exception in case of errors
 	 */
 	default void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler,

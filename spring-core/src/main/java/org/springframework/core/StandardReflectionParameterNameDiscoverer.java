@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,10 +26,15 @@ import org.springframework.lang.Nullable;
  * {@link ParameterNameDiscoverer} implementation which uses JDK 8's reflection facilities
  * for introspecting parameter names (based on the "-parameters" compiler flag).
  *
+ * <p>This is a key element of {@link DefaultParameterNameDiscoverer} where it is being
+ * combined with {@link KotlinReflectionParameterNameDiscoverer} if Kotlin is present.
+ *
  * @author Juergen Hoeller
  * @since 4.0
  * @see java.lang.reflect.Method#getParameters()
  * @see java.lang.reflect.Parameter#getName()
+ * @see KotlinReflectionParameterNameDiscoverer
+ * @see DefaultParameterNameDiscoverer
  */
 public class StandardReflectionParameterNameDiscoverer implements ParameterNameDiscoverer {
 

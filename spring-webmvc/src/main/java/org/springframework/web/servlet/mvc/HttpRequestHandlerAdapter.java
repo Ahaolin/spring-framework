@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2012 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,13 +16,13 @@
 
 package org.springframework.web.servlet.mvc;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.springframework.lang.Nullable;
 import org.springframework.web.HttpRequestHandler;
 import org.springframework.web.servlet.HandlerAdapter;
 import org.springframework.web.servlet.ModelAndView;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * Adapter to use the plain {@link org.springframework.web.HttpRequestHandler}
@@ -35,14 +35,12 @@ import javax.servlet.http.HttpServletResponse;
  * @since 2.0
  * @see org.springframework.web.servlet.DispatcherServlet
  * @see org.springframework.web.HttpRequestHandler
- * @see LastModified
  * @see SimpleControllerHandlerAdapter
  */
 public class HttpRequestHandlerAdapter implements HandlerAdapter {
 
 	@Override
 	public boolean supports(Object handler) {
-	    // 判断是 HttpRequestHandler 类型
 		return (handler instanceof HttpRequestHandler);
 	}
 
@@ -50,14 +48,14 @@ public class HttpRequestHandlerAdapter implements HandlerAdapter {
 	@Nullable
 	public ModelAndView handle(HttpServletRequest request, HttpServletResponse response, Object handler)
 			throws Exception {
-	    // HttpRequestHandler 类型的调用
+
 		((HttpRequestHandler) handler).handleRequest(request, response);
 		return null;
 	}
 
 	@Override
+	@SuppressWarnings("deprecation")
 	public long getLastModified(HttpServletRequest request, Object handler) {
-        // 处理器实现了 LastModified 接口的情况下
 		if (handler instanceof LastModified) {
 			return ((LastModified) handler).getLastModified(request);
 		}

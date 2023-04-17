@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,9 +16,9 @@
 
 package org.springframework.web.servlet;
 
-import org.springframework.lang.Nullable;
-
 import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.lang.Nullable;
 
 /**
  * Strategy interface for translating an incoming
@@ -32,8 +32,6 @@ import javax.servlet.http.HttpServletRequest;
 public interface RequestToViewNameTranslator {
 
 	/**
-     * 根据请求，获得其视图名
-     *
 	 * Translate the given {@link HttpServletRequest} into a view name.
 	 * @param request the incoming {@link HttpServletRequest} providing
 	 * the context from which a view name is to be resolved

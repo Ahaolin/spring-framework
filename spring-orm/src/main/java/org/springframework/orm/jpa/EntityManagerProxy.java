@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -37,7 +37,7 @@ public interface EntityManagerProxy extends EntityManager {
 	 * raw EntityManager.
 	 * <p>In case of a shared ("transactional") EntityManager, this will be
 	 * the raw EntityManager that is currently associated with the transaction.
-	 * Outside of a transaction, an IllegalStateException will be thrown.
+	 * Outside a transaction, an IllegalStateException will be thrown.
 	 * @return the underlying raw EntityManager (never {@code null})
 	 * @throws IllegalStateException if no underlying EntityManager is available
 	 */

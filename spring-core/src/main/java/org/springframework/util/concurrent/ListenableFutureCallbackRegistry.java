@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,14 +16,14 @@
 
 package org.springframework.util.concurrent;
 
-import java.util.LinkedList;
+import java.util.ArrayDeque;
 import java.util.Queue;
 
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
- * Helper class for {@link ListenableFuture} implementations that maintains a
+ * Helper class for {@link ListenableFuture} implementations that maintains a queue
  * of success and failure callbacks and helps to notify them.
  *
  * <p>Inspired by {@code com.google.common.util.concurrent.ExecutionList}.
@@ -36,9 +36,9 @@ import org.springframework.util.Assert;
  */
 public class ListenableFutureCallbackRegistry<T> {
 
-	private final Queue<SuccessCallback<? super T>> successCallbacks = new LinkedList<>();
+	private final Queue<SuccessCallback<? super T>> successCallbacks = new ArrayDeque<>(1);
 
-	private final Queue<FailureCallback> failureCallbacks = new LinkedList<>();
+	private final Queue<FailureCallback> failureCallbacks = new ArrayDeque<>(1);
 
 	private State state = State.NEW;
 

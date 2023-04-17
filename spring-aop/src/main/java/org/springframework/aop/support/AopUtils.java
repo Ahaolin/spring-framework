@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,14 +16,6 @@
 
 package org.springframework.aop.support;
 
-import org.springframework.aop.*;
-import org.springframework.core.BridgeMethodResolver;
-import org.springframework.core.MethodIntrospector;
-import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
-import org.springframework.util.ReflectionUtils;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -32,6 +24,22 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.springframework.aop.Advisor;
+import org.springframework.aop.AopInvocationException;
+import org.springframework.aop.IntroductionAdvisor;
+import org.springframework.aop.IntroductionAwareMethodMatcher;
+import org.springframework.aop.MethodMatcher;
+import org.springframework.aop.Pointcut;
+import org.springframework.aop.PointcutAdvisor;
+import org.springframework.aop.SpringProxy;
+import org.springframework.aop.TargetClassAware;
+import org.springframework.core.BridgeMethodResolver;
+import org.springframework.core.MethodIntrospector;
+import org.springframework.lang.Nullable;
+import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
+import org.springframework.util.ReflectionUtils;
 
 /**
  * Utility methods for AOP support code.
@@ -58,9 +66,8 @@ public abstract class AopUtils {
 	 * @see #isCglibProxy
 	 */
 	public static boolean isAopProxy(@Nullable Object object) {
-		return (object instanceof SpringProxy &&
-				(Proxy.isProxyClass(object.getClass()) // JDK Proxy 类
-                        || ClassUtils.isCglibProxyClass(object.getClass()))); // CGLIB Proxy 类
+		return (object instanceof SpringProxy && (Proxy.isProxyClass(object.getClass()) ||
+				object.getClass().getName().contains(ClassUtils.CGLIB_CLASS_SEPARATOR)));
 	}
 
 	/**
@@ -84,7 +91,8 @@ public abstract class AopUtils {
 	 * @see ClassUtils#isCglibProxy(Object)
 	 */
 	public static boolean isCglibProxy(@Nullable Object object) {
-		return (object instanceof SpringProxy && ClassUtils.isCglibProxy(object));
+		return (object instanceof SpringProxy &&
+				object.getClass().getName().contains(ClassUtils.CGLIB_CLASS_SEPARATOR));
 	}
 
 	/**
@@ -175,8 +183,8 @@ public abstract class AopUtils {
 	 * may be {@code DefaultFoo}. In this case, the method may be
 	 * {@code DefaultFoo.bar()}. This enables attributes on that method to be found.
 	 * <p><b>NOTE:</b> In contrast to {@link org.springframework.util.ClassUtils#getMostSpecificMethod},
-	 * this method resolves Java 5 bridge methods in order to retrieve attributes
-	 * from the <i>original</i> method definition.
+	 * this method resolves bridge methods in order to retrieve attributes from
+	 * the <i>original</i> method definition.
 	 * @param method the method to be invoked, which may come from an interface
 	 * @param targetClass the target class for the current invocation.
 	 * May be {@code null} or may not even implement the method.
@@ -209,46 +217,39 @@ public abstract class AopUtils {
 	 * out a pointcut for a class.
 	 * @param pc the static or dynamic pointcut to check
 	 * @param targetClass the class to test
-	 * @param hasIntroductions whether or not the advisor chain
+	 * @param hasIntroductions whether the advisor chain
 	 * for this bean includes any introductions
 	 * @return whether the pointcut can apply on any method
 	 */
 	public static boolean canApply(Pointcut pc, Class<?> targetClass, boolean hasIntroductions) {
 		Assert.notNull(pc, "Pointcut must not be null");
-		// 先判断 Pointcut 是否可以匹配目标类。如果不可以，则返回 false
-        if (!pc.getClassFilter().matches(targetClass)) {
+		if (!pc.getClassFilter().matches(targetClass)) {
 			return false;
 		}
 
-		// 如果匹配所有方法，直接返回匹配
 		MethodMatcher methodMatcher = pc.getMethodMatcher();
 		if (methodMatcher == MethodMatcher.TRUE) {
 			// No need to iterate the methods if we're matching any method anyway...
 			return true;
 		}
 
-		// 如果 pc 是 IntroductionAwareMethodMatcher ，进行转换
 		IntroductionAwareMethodMatcher introductionAwareMethodMatcher = null;
 		if (methodMatcher instanceof IntroductionAwareMethodMatcher) {
 			introductionAwareMethodMatcher = (IntroductionAwareMethodMatcher) methodMatcher;
 		}
 
-		// 获得类和其所有接口
 		Set<Class<?>> classes = new LinkedHashSet<>();
 		if (!Proxy.isProxyClass(targetClass)) {
-			classes.add(ClassUtils.getUserClass(targetClass)); // 获得自身的类
+			classes.add(ClassUtils.getUserClass(targetClass));
 		}
-		classes.addAll(ClassUtils.getAllInterfacesForClassAsSet(targetClass)); // 获得接口
+		classes.addAll(ClassUtils.getAllInterfacesForClassAsSet(targetClass));
 
-        // 遍历每个类，匹配每个类对应的方法
 		for (Class<?> clazz : classes) {
-		    // 遍历每个方法，判断是否匹配
 			Method[] methods = ReflectionUtils.getAllDeclaredMethods(clazz);
 			for (Method method : methods) {
-			    // 根据情况，使用 IntroductionAwareMethodMatcher 还是 PointcutAdvisor ，调用对应的匹配方法
 				if (introductionAwareMethodMatcher != null ?
-						introductionAwareMethodMatcher.matches(method, targetClass, hasIntroductions) : // IntroductionAwareMethodMatcher 匹配方法
-						methodMatcher.matches(method, targetClass)) { // PointcutAdvisor 匹配方法
+						introductionAwareMethodMatcher.matches(method, targetClass, hasIntroductions) :
+						methodMatcher.matches(method, targetClass)) {
 					return true;
 				}
 			}
@@ -260,7 +261,7 @@ public abstract class AopUtils {
 	/**
 	 * Can the given advisor apply at all on the given class?
 	 * This is an important test as it can be used to optimize
-	 * out a advisor for a class.
+	 * out an advisor for a class.
 	 * @param advisor the advisor to check
 	 * @param targetClass class we're testing
 	 * @return whether the pointcut can apply on any method
@@ -271,21 +272,23 @@ public abstract class AopUtils {
 
 	/**
 	 * Can the given advisor apply at all on the given class?
-	 * <p>This is an important test as it can be used to optimize out a advisor for a class.
+	 * <p>This is an important test as it can be used to optimize out an advisor for a class.
 	 * This version also takes into account introductions (for IntroductionAwareMethodMatchers).
 	 * @param advisor the advisor to check
 	 * @param targetClass class we're testing
-	 * @param hasIntroductions whether or not the advisor chain for this bean includes 是否已经招到 IntroductionAdvisor
+	 * @param hasIntroductions whether the advisor chain for this bean includes
 	 * any introductions
 	 * @return whether the pointcut can apply on any method
 	 */
 	public static boolean canApply(Advisor advisor, Class<?> targetClass, boolean hasIntroductions) {
-		if (advisor instanceof IntroductionAdvisor) { // IntroductionAdvisor 增强器
+		if (advisor instanceof IntroductionAdvisor) {
 			return ((IntroductionAdvisor) advisor).getClassFilter().matches(targetClass);
-		} else if (advisor instanceof PointcutAdvisor) { // PointcutAdvisor 增强器
+		}
+		else if (advisor instanceof PointcutAdvisor) {
 			PointcutAdvisor pca = (PointcutAdvisor) advisor;
 			return canApply(pca.getPointcut(), targetClass, hasIntroductions);
-		} else { // 其他，默认可以
+		}
+		else {
 			// It doesn't have a pointcut so we assume it applies.
 			return true;
 		}
@@ -303,22 +306,19 @@ public abstract class AopUtils {
 		if (candidateAdvisors.isEmpty()) {
 			return candidateAdvisors;
 		}
-		List<Advisor> eligibleAdvisors = new ArrayList<>(); // eligible 翻译为符合条件的
-		// 首先，处理 IntroductionAdvisor 增强器 // TODO 芋艿，暂时没用过 IntroductionAdvisor
+		List<Advisor> eligibleAdvisors = new ArrayList<>();
 		for (Advisor candidate : candidateAdvisors) {
-			if (candidate instanceof IntroductionAdvisor // 匹配 IntroductionAdvisor 增强器
-                    && canApply(candidate, clazz)) { // 判断，是否可以匹配
+			if (candidate instanceof IntroductionAdvisor && canApply(candidate, clazz)) {
 				eligibleAdvisors.add(candidate);
 			}
 		}
 		boolean hasIntroductions = !eligibleAdvisors.isEmpty();
-        // 然后，处理非 IntroductionAdvisor 增强器
-        for (Advisor candidate : candidateAdvisors) {
-			if (candidate instanceof IntroductionAdvisor) { // 跳过 IntroductionAdvisor 增强器，因为上面处理过了。
+		for (Advisor candidate : candidateAdvisors) {
+			if (candidate instanceof IntroductionAdvisor) {
 				// already processed
 				continue;
 			}
-			if (canApply(candidate, clazz, hasIntroductions)) { // 判断，是否可以匹配
+			if (canApply(candidate, clazz, hasIntroductions)) {
 				eligibleAdvisors.add(candidate);
 			}
 		}

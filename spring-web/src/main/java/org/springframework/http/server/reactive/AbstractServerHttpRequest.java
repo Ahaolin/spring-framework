@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,11 +22,8 @@ import java.net.URLDecoder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.logging.Log;
-
 import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpLogging;
 import org.springframework.http.server.RequestPath;
 import org.springframework.lang.Nullable;
 import org.springframework.util.CollectionUtils;
@@ -42,8 +39,6 @@ import org.springframework.util.StringUtils;
  * @since 5.0
  */
 public abstract class AbstractServerHttpRequest implements ServerHttpRequest {
-
-	protected final Log logger = HttpLogging.forLogName(getClass());
 
 	private static final Pattern QUERY_PATTERN = Pattern.compile("([^&=]+)(=?)([^&]+)?");
 
@@ -74,7 +69,20 @@ public abstract class AbstractServerHttpRequest implements ServerHttpRequest {
 	 * Constructor with the URI and headers for the request.
 	 * @param uri the URI for the request
 	 * @param contextPath the context path for the request
-	 * @param headers the headers for the request
+	 * @param headers the headers for the request (as {@link MultiValueMap})
+	 * @since 5.3
+	 */
+	public AbstractServerHttpRequest(URI uri, @Nullable String contextPath, MultiValueMap<String, String> headers) {
+		this.uri = uri;
+		this.path = RequestPath.parse(uri, contextPath);
+		this.headers = HttpHeaders.readOnlyHttpHeaders(headers);
+	}
+
+	/**
+	 * Constructor with the URI and headers for the request.
+	 * @param uri the URI for the request
+	 * @param contextPath the context path for the request
+	 * @param headers the headers for the request (as {@link HttpHeaders})
 	 */
 	public AbstractServerHttpRequest(URI uri, @Nullable String contextPath, HttpHeaders headers) {
 		this.uri = uri;
@@ -83,6 +91,7 @@ public abstract class AbstractServerHttpRequest implements ServerHttpRequest {
 	}
 
 
+	@Override
 	public String getId() {
 		if (this.id == null) {
 			this.id = initId();
@@ -155,10 +164,7 @@ public abstract class AbstractServerHttpRequest implements ServerHttpRequest {
 			return URLDecoder.decode(value, "UTF-8");
 		}
 		catch (UnsupportedEncodingException ex) {
-			if (logger.isWarnEnabled()) {
-				logger.warn(getLogPrefix() + "Could not decode query value [" + value + "] as 'UTF-8'. " +
-						"Falling back on default encoding: " + ex.getMessage());
-			}
+			// Should never happen but we got a platform default fallback anyway.
 			return URLDecoder.decode(value);
 		}
 	}
@@ -176,7 +182,7 @@ public abstract class AbstractServerHttpRequest implements ServerHttpRequest {
 	 * an {@link HttpCookie} map. The return value is turned into an immutable
 	 * map and cached.
 	 * <p>Note that this method is invoked lazily on access to
-	 * {@link #getCookies()}. Sub-classes should synchronize cookie
+	 * {@link #getCookies()}. Subclasses should synchronize cookie
 	 * initialization if the underlying "native" request does not provide
 	 * thread-safe access to cookie data.
 	 */
@@ -212,9 +218,18 @@ public abstract class AbstractServerHttpRequest implements ServerHttpRequest {
 	 */
 	String getLogPrefix() {
 		if (this.logPrefix == null) {
-			this.logPrefix = "[" + getId() + "] ";
+			this.logPrefix = "[" + initLogPrefix() + "] ";
 		}
 		return this.logPrefix;
+	}
+
+	/**
+	 * Subclasses can override this to provide the prefix to use for log messages.
+	 * <p>By default, this is {@link #getId()}.
+	 * @since 5.3.15
+	 */
+	protected String initLogPrefix() {
+		return getId();
 	}
 
 }

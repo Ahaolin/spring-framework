@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,18 +16,18 @@
 
 package org.springframework.aop.aspectj;
 
+import java.io.Serializable;
+import java.lang.reflect.Method;
+
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.weaver.tools.JoinPointMatch;
-import org.springframework.aop.ProxyMethodInvocation;
 
-import java.io.Serializable;
-import java.lang.reflect.Method;
+import org.springframework.aop.ProxyMethodInvocation;
+import org.springframework.lang.Nullable;
 
 /**
- *
- *
  * Spring AOP around advice (MethodInterceptor) that wraps
  * an AspectJ advice method. Exposes ProceedingJoinPoint.
  *
@@ -40,6 +40,7 @@ public class AspectJAroundAdvice extends AbstractAspectJAdvice implements Method
 
 	public AspectJAroundAdvice(
 			Method aspectJAroundAdviceMethod, AspectJExpressionPointcut pointcut, AspectInstanceFactory aif) {
+
 		super(aspectJAroundAdviceMethod, pointcut, aif);
 	}
 
@@ -60,6 +61,7 @@ public class AspectJAroundAdvice extends AbstractAspectJAdvice implements Method
 	}
 
 	@Override
+	@Nullable
 	public Object invoke(MethodInvocation mi) throws Throwable {
 		if (!(mi instanceof ProxyMethodInvocation)) {
 			throw new IllegalStateException("MethodInvocation is not a Spring ProxyMethodInvocation: " + mi);

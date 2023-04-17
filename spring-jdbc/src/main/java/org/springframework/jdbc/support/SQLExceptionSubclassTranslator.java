@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -53,7 +53,7 @@ import org.springframework.lang.Nullable;
  * @author Juergen Hoeller
  * @since 2.5
  * @see java.sql.SQLTransientException
- * @see java.sql.SQLTransientException
+ * @see java.sql.SQLNonTransientException
  * @see java.sql.SQLRecoverableException
  */
 public class SQLExceptionSubclassTranslator extends AbstractFallbackSQLExceptionTranslator {
@@ -69,10 +69,10 @@ public class SQLExceptionSubclassTranslator extends AbstractFallbackSQLException
 			if (ex instanceof SQLTransientConnectionException) {
 				return new TransientDataAccessResourceException(buildMessage(task, sql, ex), ex);
 			}
-			else if (ex instanceof SQLTransactionRollbackException) {
+			if (ex instanceof SQLTransactionRollbackException) {
 				return new ConcurrencyFailureException(buildMessage(task, sql, ex), ex);
 			}
-			else if (ex instanceof SQLTimeoutException) {
+			if (ex instanceof SQLTimeoutException) {
 				return new QueryTimeoutException(buildMessage(task, sql, ex), ex);
 			}
 		}
@@ -80,19 +80,19 @@ public class SQLExceptionSubclassTranslator extends AbstractFallbackSQLException
 			if (ex instanceof SQLNonTransientConnectionException) {
 				return new DataAccessResourceFailureException(buildMessage(task, sql, ex), ex);
 			}
-			else if (ex instanceof SQLDataException) {
+			if (ex instanceof SQLDataException) {
 				return new DataIntegrityViolationException(buildMessage(task, sql, ex), ex);
 			}
-			else if (ex instanceof SQLIntegrityConstraintViolationException) {
+			if (ex instanceof SQLIntegrityConstraintViolationException) {
 				return new DataIntegrityViolationException(buildMessage(task, sql, ex), ex);
 			}
-			else if (ex instanceof SQLInvalidAuthorizationSpecException) {
+			if (ex instanceof SQLInvalidAuthorizationSpecException) {
 				return new PermissionDeniedDataAccessException(buildMessage(task, sql, ex), ex);
 			}
-			else if (ex instanceof SQLSyntaxErrorException) {
+			if (ex instanceof SQLSyntaxErrorException) {
 				return new BadSqlGrammarException(task, (sql != null ? sql : ""), ex);
 			}
-			else if (ex instanceof SQLFeatureNotSupportedException) {
+			if (ex instanceof SQLFeatureNotSupportedException) {
 				return new InvalidDataAccessApiUsageException(buildMessage(task, sql, ex), ex);
 			}
 		}
