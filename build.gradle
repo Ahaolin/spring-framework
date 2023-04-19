@@ -430,6 +430,10 @@ configure(rootProject) {
 		maxHeapSize = "1g"
 	}
 
+    tasks.withType(JavaCompile) {
+        options.encoding = "UTF-8"
+    }
+
 	publishing {
 		publications {
 			mavenJava(MavenPublication) {

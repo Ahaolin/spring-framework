@@ -44,6 +44,9 @@ import org.springframework.util.ObjectUtils;
  */
 public class EncodedResource implements InputStreamSource {
 
+    /**
+     * 内置的 Resource 对象
+     */
 	private final Resource resource;
 
 	@Nullable
