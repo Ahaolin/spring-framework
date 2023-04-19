@@ -22,6 +22,8 @@ import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 
 /**
+ * <pre> Document 加载器接口 </pre>
+ *
  * Strategy interface for loading an XML {@link Document}.
  *
  * @author Rob Harrop
