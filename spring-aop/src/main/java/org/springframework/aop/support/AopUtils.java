@@ -66,8 +66,9 @@ public abstract class AopUtils {
 	 * @see #isCglibProxy
 	 */
 	public static boolean isAopProxy(@Nullable Object object) {
-		return (object instanceof SpringProxy && (Proxy.isProxyClass(object.getClass()) ||
-				object.getClass().getName().contains(ClassUtils.CGLIB_CLASS_SEPARATOR)));
+		return (object instanceof SpringProxy &&
+                (Proxy.isProxyClass(object.getClass()) // JDK Proxy 类
+                        ||object.getClass().getName().contains(ClassUtils.CGLIB_CLASS_SEPARATOR))); // CGLIB Proxy 类 ClassUtils.isCglibProxyClass(object.getClass())))
 	}
 
 	/**
@@ -223,33 +224,40 @@ public abstract class AopUtils {
 	 */
 	public static boolean canApply(Pointcut pc, Class<?> targetClass, boolean hasIntroductions) {
 		Assert.notNull(pc, "Pointcut must not be null");
+		// 先判断 Pointcut 是否可以匹配目标类。如果不可以，则返回 false
 		if (!pc.getClassFilter().matches(targetClass)) {
 			return false;
 		}
 
+		// 如果匹配所有方法，直接返回匹配
 		MethodMatcher methodMatcher = pc.getMethodMatcher();
 		if (methodMatcher == MethodMatcher.TRUE) {
 			// No need to iterate the methods if we're matching any method anyway...
 			return true;
 		}
 
+		// 如果 pc 是 IntroductionAwareMethodMatcher ，进行转换
 		IntroductionAwareMethodMatcher introductionAwareMethodMatcher = null;
 		if (methodMatcher instanceof IntroductionAwareMethodMatcher) {
 			introductionAwareMethodMatcher = (IntroductionAwareMethodMatcher) methodMatcher;
 		}
 
+		// 获得类和其所有接口
 		Set<Class<?>> classes = new LinkedHashSet<>();
 		if (!Proxy.isProxyClass(targetClass)) {
-			classes.add(ClassUtils.getUserClass(targetClass));
+			classes.add(ClassUtils.getUserClass(targetClass)); // 获得自身的类
 		}
-		classes.addAll(ClassUtils.getAllInterfacesForClassAsSet(targetClass));
+		classes.addAll(ClassUtils.getAllInterfacesForClassAsSet(targetClass)); // 获得接口
 
+        // 遍历每个类，匹配每个类对应的方法
 		for (Class<?> clazz : classes) {
+		    // 遍历每个方法，判断是否匹配
 			Method[] methods = ReflectionUtils.getAllDeclaredMethods(clazz);
 			for (Method method : methods) {
+			    // 根据情况，使用 IntroductionAwareMethodMatcher 还是 PointcutAdvisor ，调用对应的匹配方法
 				if (introductionAwareMethodMatcher != null ?
-						introductionAwareMethodMatcher.matches(method, targetClass, hasIntroductions) :
-						methodMatcher.matches(method, targetClass)) {
+						introductionAwareMethodMatcher.matches(method, targetClass, hasIntroductions) : // IntroductionAwareMethodMatcher 匹配方法
+						methodMatcher.matches(method, targetClass)) { // PointcutAdvisor 匹配方法
 					return true;
 				}
 			}
@@ -276,19 +284,19 @@ public abstract class AopUtils {
 	 * This version also takes into account introductions (for IntroductionAwareMethodMatchers).
 	 * @param advisor the advisor to check
 	 * @param targetClass class we're testing
-	 * @param hasIntroductions whether the advisor chain for this bean includes
+	 * @param hasIntroductions whether the advisor chain for this bean includes 是否已经招到 IntroductionAdvisor
 	 * any introductions
 	 * @return whether the pointcut can apply on any method
 	 */
 	public static boolean canApply(Advisor advisor, Class<?> targetClass, boolean hasIntroductions) {
-		if (advisor instanceof IntroductionAdvisor) {
+		if (advisor instanceof IntroductionAdvisor) { // IntroductionAdvisor 增强器
 			return ((IntroductionAdvisor) advisor).getClassFilter().matches(targetClass);
 		}
-		else if (advisor instanceof PointcutAdvisor) {
+		else if (advisor instanceof PointcutAdvisor) { // PointcutAdvisor 增强器
 			PointcutAdvisor pca = (PointcutAdvisor) advisor;
 			return canApply(pca.getPointcut(), targetClass, hasIntroductions);
 		}
-		else {
+		else { // 其他，默认可以
 			// It doesn't have a pointcut so we assume it applies.
 			return true;
 		}
@@ -306,19 +314,22 @@ public abstract class AopUtils {
 		if (candidateAdvisors.isEmpty()) {
 			return candidateAdvisors;
 		}
-		List<Advisor> eligibleAdvisors = new ArrayList<>();
+		List<Advisor> eligibleAdvisors = new ArrayList<>(); // eligible 翻译为符合条件的
+		// 首先，处理 IntroductionAdvisor 增强器 // TODO 芋艿，暂时没用过 IntroductionAdvisor
 		for (Advisor candidate : candidateAdvisors) {
-			if (candidate instanceof IntroductionAdvisor && canApply(candidate, clazz)) {
+			if (candidate instanceof IntroductionAdvisor // 匹配 IntroductionAdvisor 增强器
+                    && canApply(candidate, clazz)) { // 判断，是否可以匹配
 				eligibleAdvisors.add(candidate);
 			}
 		}
 		boolean hasIntroductions = !eligibleAdvisors.isEmpty();
-		for (Advisor candidate : candidateAdvisors) {
-			if (candidate instanceof IntroductionAdvisor) {
+        // 然后，处理非 IntroductionAdvisor 增强器
+        for (Advisor candidate : candidateAdvisors) {
+			if (candidate instanceof IntroductionAdvisor) { // 跳过 IntroductionAdvisor 增强器，因为上面处理过了。
 				// already processed
 				continue;
 			}
-			if (canApply(candidate, clazz, hasIntroductions)) {
+			if (canApply(candidate, clazz, hasIntroductions)) { // 判断，是否可以匹配
 				eligibleAdvisors.add(candidate);
 			}
 		}

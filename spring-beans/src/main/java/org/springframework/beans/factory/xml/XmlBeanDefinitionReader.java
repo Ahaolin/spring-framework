@@ -113,8 +113,7 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
      *
      * @see #createBeanDefinitionDocumentReader()
      */
-	private Class<? extends BeanDefinitionDocumentReader> documentReaderClass =
-			DefaultBeanDefinitionDocumentReader.class;
+	private Class<? extends BeanDefinitionDocumentReader> documentReaderClass = DefaultBeanDefinitionDocumentReader.class;
 
 	private ProblemReporter problemReporter = new FailFastProblemReporter();
 

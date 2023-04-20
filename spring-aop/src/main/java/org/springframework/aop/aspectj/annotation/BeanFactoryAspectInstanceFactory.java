@@ -44,10 +44,17 @@ import org.springframework.util.ClassUtils;
 @SuppressWarnings("serial")
 public class BeanFactoryAspectInstanceFactory implements MetadataAwareAspectInstanceFactory, Serializable {
 
+    /**
+     * BeanFactory 对象
+     */
 	private final BeanFactory beanFactory;
-
+    /**
+     * 切面 Bean 名字
+     */
 	private final String name;
-
+    /**
+     * 切面元数据
+     */
 	private final AspectMetadata aspectMetadata;
 
 

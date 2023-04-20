@@ -22,6 +22,8 @@ import org.springframework.lang.Nullable;
 import org.springframework.transaction.TransactionDefinition;
 
 /**
+ * 支持定义返回异常回滚的事务定义接口。
+ *
  * This interface adds a {@code rollbackOn} specification to {@link TransactionDefinition}.
  * As custom {@code rollbackOn} is only possible with AOP, it resides in the AOP-related
  * transaction subpackage.
@@ -45,6 +47,8 @@ public interface TransactionAttribute extends TransactionDefinition {
 	String getQualifier();
 
 	/**
+     * 当发生指定异常时，回滚事务。
+     *
 	 * Return labels associated with this transaction attribute.
 	 * <p>This may be used for applying specific transactional behavior
 	 * or follow a purely descriptive nature.

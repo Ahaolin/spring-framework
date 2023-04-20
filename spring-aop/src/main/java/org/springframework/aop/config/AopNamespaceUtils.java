@@ -58,7 +58,9 @@ public abstract class AopNamespaceUtils {
 
 		BeanDefinition beanDefinition = AopConfigUtils.registerAutoProxyCreatorIfNecessary(
 				parserContext.getRegistry(), parserContext.extractSource(sourceElement));
+        // 如果满足条件，则使用 CGLIB 代理
 		useClassProxyingIfNecessary(parserContext.getRegistry(), sourceElement);
+        // 注册组件，并发送通知。便于监听器，做进一步处理
 		registerComponentIfNecessary(beanDefinition, parserContext);
 	}
 
@@ -71,21 +73,31 @@ public abstract class AopNamespaceUtils {
 		registerComponentIfNecessary(beanDefinition, parserContext);
 	}
 
+    /**
+     * 注册 AUTO_PROXY_CREATOR_BEAN_NAME 对应的 BeanDefinition 对象，即 {@link AbstractAdvisorAutoProxyCreator} 代理创建器
+     *
+     * @param parserContext 解析上下文
+     * @param sourceElement 标签
+     */
 	public static void registerAspectJAnnotationAutoProxyCreatorIfNecessary(
 			ParserContext parserContext, Element sourceElement) {
-
+	    // 获得 AUTO_PROXY_CREATOR_BEAN_NAME 对应的 BeanDefinition 对象
 		BeanDefinition beanDefinition = AopConfigUtils.registerAspectJAnnotationAutoProxyCreatorIfNecessary(
 				parserContext.getRegistry(), parserContext.extractSource(sourceElement));
+		// 如果满足条件，则使用 CGLIB 代理
 		useClassProxyingIfNecessary(parserContext.getRegistry(), sourceElement);
+		// 注册组件，并发送通知。便于监听器，做进一步处理
 		registerComponentIfNecessary(beanDefinition, parserContext);
 	}
 
 	private static void useClassProxyingIfNecessary(BeanDefinitionRegistry registry, @Nullable Element sourceElement) {
 		if (sourceElement != null) {
+		    // 解析 "proxy-target-class" 属性。https://blog.csdn.net/oathevil/article/details/7244694
 			boolean proxyTargetClass = Boolean.parseBoolean(sourceElement.getAttribute(PROXY_TARGET_CLASS_ATTRIBUTE));
 			if (proxyTargetClass) {
 				AopConfigUtils.forceAutoProxyCreatorToUseClassProxying(registry);
 			}
+			// 解析 "expose-proxy" 属性。https://www.cnblogs.com/chihirotan/p/7356683.html
 			boolean exposeProxy = Boolean.parseBoolean(sourceElement.getAttribute(EXPOSE_PROXY_ATTRIBUTE));
 			if (exposeProxy) {
 				AopConfigUtils.forceAutoProxyCreatorToExposeProxy(registry);

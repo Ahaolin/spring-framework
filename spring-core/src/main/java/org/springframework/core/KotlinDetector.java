@@ -23,6 +23,8 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.ClassUtils;
 
 /**
+ * 用于检测Kotlin的存在和识别Kotlin常见类型
+ *
  * A common delegate for detecting Kotlin's presence and for identifying Kotlin types.
  *
  * @author Juergen Hoeller

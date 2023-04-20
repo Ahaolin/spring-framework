@@ -164,6 +164,10 @@ public abstract class DataSourceUtils {
 	}
 
 	/**
+     * 准备数据连接状态，使用给定的语义( semantics )
+     *
+     * 若事务隔离级别发生变化，则返回老的隔离级别。
+     *
 	 * Prepare the given Connection with the given transaction semantics.
 	 * @param con the Connection to prepare
 	 * @param definition the transaction definition to apply
@@ -181,6 +185,7 @@ public abstract class DataSourceUtils {
 
 		boolean debugEnabled = logger.isDebugEnabled();
 		// Set read-only flag.
+        // 设置为只读标识
 		if (definition != null && definition.isReadOnly()) {
 			try {
 				if (debugEnabled) {
@@ -189,6 +194,7 @@ public abstract class DataSourceUtils {
 				con.setReadOnly(true);
 			}
 			catch (SQLException | RuntimeException ex) {
+			    // 获得是否为超时异常
 				Throwable exToCheck = ex;
 				while (exToCheck != null) {
 					if (exToCheck.getClass().getSimpleName().contains("Timeout")) {
@@ -203,6 +209,7 @@ public abstract class DataSourceUtils {
 		}
 
 		// Apply specific isolation level, if any.
+        // 设置隔离级别
 		Integer previousIsolationLevel = null;
 		if (definition != null && definition.getIsolationLevel() != TransactionDefinition.ISOLATION_DEFAULT) {
 			if (debugEnabled) {
@@ -216,10 +223,16 @@ public abstract class DataSourceUtils {
 			}
 		}
 
+		// 获得原隔离级别
 		return previousIsolationLevel;
 	}
 
 	/**
+     * 重置 Connection 到事务开始之前
+     *
+     * 1. 重置数据库隔离级别
+     * 2. 重置只读状态
+     *
 	 * Reset the given Connection after a transaction,
 	 * regarding read-only flag and isolation level.
 	 * @param con the Connection to reset
@@ -271,6 +284,7 @@ public abstract class DataSourceUtils {
 		Assert.notNull(con, "No Connection specified");
 		try {
 			// Reset transaction isolation to previous value, if changed for the transaction.
+            // 重置数据库隔离级别
 			if (previousIsolationLevel != null) {
 				if (logger.isDebugEnabled()) {
 					logger.debug("Resetting isolation level of JDBC Connection [" +
@@ -280,6 +294,7 @@ public abstract class DataSourceUtils {
 			}
 
 			// Reset read-only flag.
+            // 重置只读状态
 			if (con.isReadOnly()) {
 				if (logger.isDebugEnabled()) {
 					logger.debug("Resetting read-only flag of JDBC Connection [" + con + "]");

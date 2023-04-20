@@ -23,6 +23,8 @@ import java.util.List;
 import org.springframework.lang.Nullable;
 
 /**
+ * 基于 {@link RollbackRuleAttribute} 的事务定义实现类。
+ *
  * TransactionAttribute implementation that works out whether a given exception
  * should cause transaction rollback by applying a number of rollback rules,
  * both positive and negative. If no custom rollback rules apply, this attribute

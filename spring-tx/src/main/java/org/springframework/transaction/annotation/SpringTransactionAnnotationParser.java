@@ -36,6 +36,8 @@ import org.springframework.util.StringUtils;
 /**
  * Strategy implementation for parsing Spring's {@link Transactional} annotation.
  *
+ * {@link Transactional} 注解的解析器
+ *
  * @author Juergen Hoeller
  * @author Mark Paluch
  * @since 2.5
@@ -51,23 +53,30 @@ public class SpringTransactionAnnotationParser implements TransactionAnnotationP
 	@Override
 	@Nullable
 	public TransactionAttribute parseTransactionAnnotation(AnnotatedElement element) {
+	    // 获得所有 @Transactional 注解
 		AnnotationAttributes attributes = AnnotatedElementUtils.findMergedAnnotationAttributes(
 				element, Transactional.class, false, false);
 		if (attributes != null) {
 			return parseTransactionAnnotation(attributes);
 		}
-		else {
-			return null;
-		}
+		return null;
 	}
 
 	public TransactionAttribute parseTransactionAnnotation(Transactional ann) {
 		return parseTransactionAnnotation(AnnotationUtils.getAnnotationAttributes(ann, false, false));
 	}
 
+    /**
+     * 将 @Transactional 注解，解析成事务属性 TransactionAttribute 对象
+     *
+     * @param attributes @Transactional 注解
+     * @return 事务属性 TransactionAttribute 对象
+     */
 	protected TransactionAttribute parseTransactionAnnotation(AnnotationAttributes attributes) {
+	    // 创建 RuleBasedTransactionAttribute 对象
 		RuleBasedTransactionAttribute rbta = new RuleBasedTransactionAttribute();
 
+		// 从注解中，解析属性
 		Propagation propagation = attributes.getEnum("propagation");
 		rbta.setPropagationBehavior(propagation.value());
 		Isolation isolation = attributes.getEnum("isolation");

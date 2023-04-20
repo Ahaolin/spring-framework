@@ -64,6 +64,8 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
+ * <pre> Aspect 表达式的切点信息 </pre>
+ *
  * Spring {@link org.springframework.aop.Pointcut} implementation
  * that uses the AspectJ weaver to evaluate a pointcut expression.
  *
@@ -116,6 +118,11 @@ public class AspectJExpressionPointcut extends AbstractExpressionPointcut
 	@Nullable
 	private transient ClassLoader pointcutClassLoader;
 
+    /**
+     * 表达式
+     *
+     * 通过 {@link #buildPointcutExpression(ClassLoader)} 解析
+     */
 	@Nullable
 	private transient PointcutExpression pointcutExpression;
 
@@ -289,9 +296,10 @@ public class AspectJExpressionPointcut extends AbstractExpressionPointcut
 		return false;
 	}
 
-	@Override
+	@Override // TODO 芋艿，这个方法，后续有需要，在细看。和 AspectJ 的机制，有一些关系
 	public boolean matches(Method method, Class<?> targetClass, boolean hasIntroductions) {
 		obtainPointcutExpression();
+		// 进行匹配
 		ShadowMatch shadowMatch = getTargetShadowMatch(method, targetClass);
 
 		// Special handling for this, target, @this, @target, @annotation

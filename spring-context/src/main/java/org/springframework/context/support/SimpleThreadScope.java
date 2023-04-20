@@ -66,12 +66,14 @@ public class SimpleThreadScope implements Scope {
 
 	@Override
 	public Object get(String name, ObjectFactory<?> objectFactory) {
+        // 获取 scope 缓存
 		Map<String, Object> scope = this.threadScope.get();
 		// NOTE: Do NOT modify the following to use Map::computeIfAbsent. For details,
 		// see https://github.com/spring-projects/spring-framework/issues/25801.
 		Object scopedObject = scope.get(name);
 		if (scopedObject == null) {
 			scopedObject = objectFactory.getObject();
+            // 加入缓存
 			scope.put(name, scopedObject);
 		}
 		return scopedObject;

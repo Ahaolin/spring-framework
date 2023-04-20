@@ -60,6 +60,11 @@ public class DefaultContextLoadTimeWeaver implements LoadTimeWeaver, BeanClassLo
 
 	protected final Log logger = LogFactory.getLog(getClass());
 
+    /**
+     * LoadTimeWeaver 对象
+     *
+     * @see #setBeanClassLoader(ClassLoader)
+     */
 	@Nullable
 	private LoadTimeWeaver loadTimeWeaver;
 
@@ -74,6 +79,7 @@ public class DefaultContextLoadTimeWeaver implements LoadTimeWeaver, BeanClassLo
 
 	@Override
 	public void setBeanClassLoader(ClassLoader classLoader) {
+	    // 获得对应的 LoadTimeWeaver 实现类的对象
 		LoadTimeWeaver serverSpecificLoadTimeWeaver = createServerSpecificLoadTimeWeaver(classLoader);
 		if (serverSpecificLoadTimeWeaver != null) {
 			if (logger.isDebugEnabled()) {
@@ -83,6 +89,8 @@ public class DefaultContextLoadTimeWeaver implements LoadTimeWeaver, BeanClassLo
 			this.loadTimeWeaver = serverSpecificLoadTimeWeaver;
 		}
 		else if (InstrumentationLoadTimeWeaver.isInstrumentationAvailable()) {
+		    // 检查当前虚拟机中，Spring Instrumentation 对象是否可用。
+            // 如果是，则创建 InstrumentationLoadTimeWeaver 对象
 			logger.debug("Found Spring's JVM agent for instrumentation");
 			this.loadTimeWeaver = new InstrumentationLoadTimeWeaver(classLoader);
 		}

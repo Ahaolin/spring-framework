@@ -116,7 +116,7 @@ public final class ParserContext {
 		if (containingComponent != null) {
 			containingComponent.addNestedComponent(component);
 		}
-		else {
+		else { // 通知
 			this.readerContext.fireComponentRegistered(component);
 		}
 	}

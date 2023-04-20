@@ -135,7 +135,9 @@ public class SimpleApplicationEventMulticaster extends AbstractApplicationEventM
 	public void multicastEvent(final ApplicationEvent event, @Nullable ResolvableType eventType) {
 		ResolvableType type = (eventType != null ? eventType : resolveDefaultEventType(event));
 		Executor executor = getTaskExecutor();
+        // 获得对应类型的 ApplicationListener 数组
 		for (ApplicationListener<?> listener : getApplicationListeners(event, type)) {
+            // 有执行器，使用执行器执行
 			if (executor != null) {
 				executor.execute(() -> invokeListener(listener, event));
 			}

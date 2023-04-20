@@ -542,6 +542,8 @@ public abstract class AnnotatedElementUtils {
 	}
 
 	/**
+     * TODO 芋艿，后续有需要，详细看下。
+     *
 	 * Find the first annotation of the specified {@code annotationType} within
 	 * the annotation hierarchy <em>above</em> the supplied {@code element} and
 	 * merge that annotation's attributes with <em>matching</em> attributes from

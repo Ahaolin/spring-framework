@@ -209,6 +209,7 @@ public class ConnectionHolder extends ResourceHolderSupport {
 	@Override
 	public void clear() {
 		super.clear();
+		// 重置事务未开启
 		this.transactionActive = false;
 		this.savepointsSupported = null;
 		this.savepointCounter = 0;

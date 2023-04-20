@@ -223,7 +223,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 		String location = ele.getAttribute(RESOURCE_ATTRIBUTE);
         // 为空，直接退出
 		if (!StringUtils.hasText(location)) {
-			getReaderContext().error("Resource location must not be empty", ele);
+			getReaderContext().error("Resource location must not be empty", ele); // 使用 problemReporter 报错
 			return;
 		}
 

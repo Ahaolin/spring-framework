@@ -57,6 +57,9 @@ public class DefaultLifecycleProcessor implements LifecycleProcessor, BeanFactor
 
 	private volatile long timeoutPerShutdownPhase = 30000;
 
+    /**
+     * 是否运行中
+     */
 	private volatile boolean running;
 
 	@Nullable
@@ -139,11 +142,14 @@ public class DefaultLifecycleProcessor implements LifecycleProcessor, BeanFactor
 	// Internal helpers
 
 	private void startBeans(boolean autoStartupOnly) {
+	    // 第一步，获得所有 Lifecycle Bean 对象的 Map 。KEY 为 beanName 。
 		Map<String, Lifecycle> lifecycleBeans = getLifecycleBeans();
+		// 第二步，LifecycleGroup 分组的 Map 。KEY 为 phase 阶段
 		Map<Integer, LifecycleGroup> phases = new TreeMap<>();
-
+        // 生成 LifecycleGroup 分组
 		lifecycleBeans.forEach((beanName, bean) -> {
 			if (!autoStartupOnly || (bean instanceof SmartLifecycle && ((SmartLifecycle) bean).isAutoStartup())) {
+                // 获得阶段
 				int phase = getPhase(bean);
 				phases.computeIfAbsent(
 						phase,
@@ -151,6 +157,7 @@ public class DefaultLifecycleProcessor implements LifecycleProcessor, BeanFactor
 				).add(beanName, bean);
 			}
 		});
+        // 第三步，逐个 LifecycleGroup 的启动,上述步骤phase已排序
 		if (!phases.isEmpty()) {
 			phases.values().forEach(LifecycleGroup::start);
 		}

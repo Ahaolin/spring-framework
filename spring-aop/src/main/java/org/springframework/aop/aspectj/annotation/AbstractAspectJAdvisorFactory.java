@@ -77,7 +77,8 @@ public abstract class AbstractAspectJAdvisorFactory implements AspectJAdvisorFac
 	 */
 	@Override
 	public boolean isAspect(Class<?> clazz) {
-		return (hasAspectAnnotation(clazz) && !compiledByAjc(clazz));
+		return (hasAspectAnnotation(clazz)  // 使用 @Aspect 注解
+                && !compiledByAjc(clazz)); // 并未使用 ajc 编译器进行编译过。关于 ajc ，可以看 https://www.jianshu.com/p/fe8d1e8bd63e
 	}
 
 	private boolean hasAspectAnnotation(Class<?> clazz) {
@@ -85,6 +86,8 @@ public abstract class AbstractAspectJAdvisorFactory implements AspectJAdvisorFac
 	}
 
 	/**
+     * 判断是否使用 ajc 编译过
+     *
 	 * We need to detect this as "code-style" AspectJ aspects should not be
 	 * interpreted by Spring AOP.
 	 */
@@ -103,7 +106,8 @@ public abstract class AbstractAspectJAdvisorFactory implements AspectJAdvisorFac
 	@Override
 	public void validate(Class<?> aspectClass) throws AopConfigException {
 		// If the parent has the annotation and isn't abstract it's an error
-		Class<?> superclass = aspectClass.getSuperclass();
+        // 父类如果有 @Aspect 注解，必须为抽象类，否则抛出 AopConfigException 异常
+        Class<?> superclass = aspectClass.getSuperclass();
 		if (superclass.getAnnotation(Aspect.class) != null &&
 				!Modifier.isAbstract(superclass.getModifiers())) {
 			throw new AopConfigException("[" + aspectClass.getName() + "] cannot extend concrete aspect [" +
@@ -114,6 +118,7 @@ public abstract class AbstractAspectJAdvisorFactory implements AspectJAdvisorFac
 		if (!ajType.isAspect()) {
 			throw new NotAnAtAspectException(aspectClass);
 		}
+		// 暂时不支持 PerClauseKind.PERCFLOW 和 PerClauseKind.PERCFLOWBELOW 类型
 		if (ajType.getPerClause().getKind() == PerClauseKind.PERCFLOW) {
 			throw new AopConfigException(aspectClass.getName() + " uses percflow instantiation model: " +
 					"This is not supported in Spring AOP.");

@@ -70,6 +70,13 @@ public final class SpringFactoriesLoader {
 
 	private static final Log logger = LogFactory.getLog(SpringFactoriesLoader.class);
 
+    /**
+     * 缓存
+     *
+     * KEY1 ：ClassLoader
+     * KEY2 ：接口的类名
+     * VALUE ：实现的类名的数组。注意哟，是个 MultiValueMap 类
+     */
 	static final Map<ClassLoader, Map<String, List<String>>> cache = new ConcurrentReferenceHashMap<>();
 
 
@@ -94,18 +101,22 @@ public final class SpringFactoriesLoader {
 	 */
 	public static <T> List<T> loadFactories(Class<T> factoryType, @Nullable ClassLoader classLoader) {
 		Assert.notNull(factoryType, "'factoryType' must not be null");
+		// 获得 ClassLoader
 		ClassLoader classLoaderToUse = classLoader;
 		if (classLoaderToUse == null) {
 			classLoaderToUse = SpringFactoriesLoader.class.getClassLoader();
 		}
+		// 获得接口对应的实现类名们
 		List<String> factoryImplementationNames = loadFactoryNames(factoryType, classLoaderToUse);
 		if (logger.isTraceEnabled()) {
 			logger.trace("Loaded [" + factoryType.getName() + "] names: " + factoryImplementationNames);
 		}
+		// 遍历 factoryNames 数组，创建实现类的对象
 		List<T> result = new ArrayList<>(factoryImplementationNames.size());
 		for (String factoryImplementationName : factoryImplementationNames) {
 			result.add(instantiateFactory(factoryImplementationName, factoryType, classLoaderToUse));
 		}
+		// 排序
 		AnnotationAwareOrderComparator.sort(result);
 		return result;
 	}
@@ -128,11 +139,14 @@ public final class SpringFactoriesLoader {
 		if (classLoaderToUse == null) {
 			classLoaderToUse = SpringFactoriesLoader.class.getClassLoader();
 		}
+        // 获得接口的类名
 		String factoryTypeName = factoryType.getName();
+	    // 加载 FACTORIES_RESOURCE_LOCATION 配置文件，获得接口对应的实现类名们
 		return loadSpringFactories(classLoaderToUse).getOrDefault(factoryTypeName, Collections.emptyList());
 	}
 
 	private static Map<String, List<String>> loadSpringFactories(ClassLoader classLoader) {
+        // 如果缓存中已经存在，则直接返回
 		Map<String, List<String>> result = cache.get(classLoader);
 		if (result != null) {
 			return result;
@@ -140,16 +154,21 @@ public final class SpringFactoriesLoader {
 
 		result = new HashMap<>();
 		try {
+		    // 获得 FACTORIES_RESOURCE_LOCATION 对应的 URL 们
 			Enumeration<URL> urls = classLoader.getResources(FACTORIES_RESOURCE_LOCATION);
 			while (urls.hasMoreElements()) {
+			    // 获得 URL
 				URL url = urls.nextElement();
+				// 创建 UrlResource 对象
 				UrlResource resource = new UrlResource(url);
+				// 加载 "META-INF/spring.factories" 配置文件，成为 Properties 对象
 				Properties properties = PropertiesLoaderUtils.loadProperties(resource);
+				// 遍历 Properties 对象
 				for (Map.Entry<?, ?> entry : properties.entrySet()) {
 					String factoryTypeName = ((String) entry.getKey()).trim();
-					String[] factoryImplementationNames =
-							StringUtils.commaDelimitedListToStringArray((String) entry.getValue());
+					String[] factoryImplementationNames = StringUtils.commaDelimitedListToStringArray((String) entry.getValue());
 					for (String factoryImplementationName : factoryImplementationNames) {
+                        // 添加到 result 中
 						result.computeIfAbsent(factoryTypeName, key -> new ArrayList<>())
 								.add(factoryImplementationName.trim());
 					}
@@ -159,6 +178,7 @@ public final class SpringFactoriesLoader {
 			// Replace all lists with unmodifiable lists containing unique elements
 			result.replaceAll((factoryType, implementations) -> implementations.stream().distinct()
 					.collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList)));
+            // 添加到 cache 中
 			cache.put(classLoader, result);
 		}
 		catch (IOException ex) {
@@ -171,11 +191,14 @@ public final class SpringFactoriesLoader {
 	@SuppressWarnings("unchecked")
 	private static <T> T instantiateFactory(String factoryImplementationName, Class<T> factoryType, ClassLoader classLoader) {
 		try {
+            // 获得 Class 类
 			Class<?> factoryImplementationClass = ClassUtils.forName(factoryImplementationName, classLoader);
+            // 判断是否实现了指定接口
 			if (!factoryType.isAssignableFrom(factoryImplementationClass)) {
 				throw new IllegalArgumentException(
 						"Class [" + factoryImplementationName + "] is not assignable to factory type [" + factoryType.getName() + "]");
 			}
+            // 创建对象
 			return (T) ReflectionUtils.accessibleConstructor(factoryImplementationClass).newInstance();
 		}
 		catch (Throwable ex) {

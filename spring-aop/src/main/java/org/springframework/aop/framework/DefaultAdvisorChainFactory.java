@@ -35,6 +35,8 @@ import org.springframework.aop.framework.adapter.GlobalAdvisorAdapterRegistry;
 import org.springframework.lang.Nullable;
 
 /**
+ * AdvisorChainFactory 默认实现类
+ *
  * A simple but definitive way of working out an advice chain for a Method,
  * given an {@link Advised} object. Always rebuilds each advice chain;
  * caching can be provided by subclasses.
@@ -53,18 +55,21 @@ public class DefaultAdvisorChainFactory implements AdvisorChainFactory, Serializ
 
 		// This is somewhat tricky... We have to process introductions first,
 		// but we need to preserve order in the ultimate list.
+        // 获得 DefaultAdvisorAdapterRegistry 对象
 		AdvisorAdapterRegistry registry = GlobalAdvisorAdapterRegistry.getInstance();
-		Advisor[] advisors = config.getAdvisors();
-		List<Object> interceptorList = new ArrayList<>(advisors.length);
-		Class<?> actualClass = (targetClass != null ? targetClass : method.getDeclaringClass());
-		Boolean hasIntroductions = null;
+        Advisor[] advisors = config.getAdvisors(); // 该类可筛选的 Advisor 集合，需要进过下面逻辑的筛选，再创建成对应的拦截器，添加到 interceptorList 中。
+        List<Object> interceptorList = new ArrayList<>(advisors.length); // 拦截器的结果集合
+        Class<?> actualClass = (targetClass != null ? targetClass : method.getDeclaringClass()); // 真实的类
+        Boolean hasIntroductions = null; // 是否 advisors 中有 IntroductionAdvisor 对象。
 
+        // 遍历 Advisor 集合
 		for (Advisor advisor : advisors) {
 			if (advisor instanceof PointcutAdvisor) {
 				// Add it conditionally.
 				PointcutAdvisor pointcutAdvisor = (PointcutAdvisor) advisor;
 				if (config.isPreFiltered() || pointcutAdvisor.getPointcut().getClassFilter().matches(actualClass)) {
 					MethodMatcher mm = pointcutAdvisor.getPointcut().getMethodMatcher();
+                    // 判断是否匹配
 					boolean match;
 					if (mm instanceof IntroductionAwareMethodMatcher) {
 						if (hasIntroductions == null) {
@@ -77,27 +82,27 @@ public class DefaultAdvisorChainFactory implements AdvisorChainFactory, Serializ
 					}
 					if (match) {
 						MethodInterceptor[] interceptors = registry.getInterceptors(advisor);
-						if (mm.isRuntime()) {
+						if (mm.isRuntime()) { // 运行时，封装成对应的 InterceptorAndDynamicMethodMatcher 拦截器对象。TODO 芋艿，暂时没详细调试 // 运行时，封装成对应的 InterceptorAndDynamicMethodMatcher 拦截器对象。TODO 芋艿，暂时没详细调试
 							// Creating a new object instance in the getInterceptors() method
 							// isn't a problem as we normally cache created chains.
 							for (MethodInterceptor interceptor : interceptors) {
 								interceptorList.add(new InterceptorAndDynamicMethodMatcher(interceptor, mm));
 							}
 						}
-						else {
+						else { // 非运行时，直接添加
 							interceptorList.addAll(Arrays.asList(interceptors));
 						}
 					}
 				}
 			}
-			else if (advisor instanceof IntroductionAdvisor) {
+			else if (advisor instanceof IntroductionAdvisor) { // TODO 芋艿，后面在调试
 				IntroductionAdvisor ia = (IntroductionAdvisor) advisor;
 				if (config.isPreFiltered() || ia.getClassFilter().matches(actualClass)) {
 					Interceptor[] interceptors = registry.getInterceptors(advisor);
 					interceptorList.addAll(Arrays.asList(interceptors));
 				}
 			}
-			else {
+			else { // TODO 芋艿，暂时未调试到这个情况
 				Interceptor[] interceptors = registry.getInterceptors(advisor);
 				interceptorList.addAll(Arrays.asList(interceptors));
 			}

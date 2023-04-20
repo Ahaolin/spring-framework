@@ -27,7 +27,9 @@ import org.springframework.transaction.TransactionManager;
 import org.springframework.util.ObjectUtils;
 
 /**
- * Abstract class that implements a Pointcut that matches if the underlying
+ * 事务属性源 Pointcut 实现类
+ *
+ * Inner class that implements a Pointcut that matches if the underlying
  * {@link TransactionAttributeSource} has an attribute for a given method.
  *
  * @author Juergen Hoeller
@@ -43,8 +45,10 @@ abstract class TransactionAttributeSourcePointcut extends StaticMethodMatcherPoi
 
 	@Override
 	public boolean matches(Method method, Class<?> targetClass) {
+        // 判断方法的事务配置
 		TransactionAttributeSource tas = getTransactionAttributeSource();
-		return (tas == null || tas.getTransactionAttribute(method, targetClass) != null);
+		return (tas == null // 全局有事务属性源 TransactionAttributeSource 对象
+                || tas.getTransactionAttribute(method, targetClass) != null); // 方法有事务属性 TransactionAttribute 对象
 	}
 
 	@Override

@@ -22,6 +22,8 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
+ * Rollback 规则属性
+ *
  * Rule determining whether a given exception should cause a rollback.
  *
  * <p>Multiple such rules can be applied to determine whether a transaction
@@ -60,6 +62,8 @@ public class RollbackRuleAttribute implements Serializable{
 
 
 	/**
+     * 异常名
+     *
 	 * Could hold exception, resolving class name but would always require FQN.
 	 * This way does multiple string comparisons, but how often do we decide
 	 * whether to roll back a transaction following an exception?

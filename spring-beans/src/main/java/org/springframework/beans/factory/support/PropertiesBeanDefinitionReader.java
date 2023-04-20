@@ -41,6 +41,11 @@ import org.springframework.util.PropertiesPersister;
 import org.springframework.util.StringUtils;
 
 /**
+ * <pre>
+ *  基于 Properties 文件，解析对应的 BeanDefinition 们。
+ *  可参考 [《spring beans源码解读之 -- BeanDefinition 解析器》](https://www.bbsmax.com/A/KE5QLe8PJL/)
+ * </pre>
+ *
  * Bean definition reader for a simple properties format.
  *
  * <p>Provides bean definition registration methods for Map/Properties and
@@ -257,6 +262,7 @@ public class PropertiesBeanDefinitionReader extends AbstractBeanDefinitionReader
 
 		Properties props = new Properties();
 		try {
+		    // 从 Resource 中，读取数据到 Properties 中
 			try (InputStream is = encodedResource.getResource().getInputStream()) {
 				if (encodedResource.getEncoding() != null) {
 					getPropertiesPersister().load(props, new InputStreamReader(is, encodedResource.getEncoding()));
@@ -266,6 +272,8 @@ public class PropertiesBeanDefinitionReader extends AbstractBeanDefinitionReader
 				}
 			}
 
+			// 从 Properties 中，解析 BeanDefinition 们
+            // 注册 BeanDefinition 们
 			int count = registerBeanDefinitions(props, prefix, encodedResource.getResource().getDescription());
 			if (logger.isDebugEnabled()) {
 				logger.debug("Loaded " + count + " bean definitions from " + encodedResource);
@@ -356,11 +364,11 @@ public class PropertiesBeanDefinitionReader extends AbstractBeanDefinitionReader
 	 */
 	public int registerBeanDefinitions(Map<?, ?> map, @Nullable String prefix, String resourceDescription)
 			throws BeansException {
-
+	    // 默认 prefix
 		if (prefix == null) {
 			prefix = "";
 		}
-		int beanCount = 0;
+		int beanCount = 0; // 计数
 
 		for (Object key : map.keySet()) {
 			if (!(key instanceof String)) {

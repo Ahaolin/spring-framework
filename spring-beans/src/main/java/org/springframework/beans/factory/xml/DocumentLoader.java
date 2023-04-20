@@ -22,7 +22,10 @@ import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 
 /**
- * <pre> Document 加载器接口 </pre>
+ * <pre>
+ * Document 加载器接口
+ *  From 《Spring 源码深度解析》：定义从资源文件加载到转换为 Document 的功能。
+ * </pre>
  *
  * Strategy interface for loading an XML {@link Document}.
  *

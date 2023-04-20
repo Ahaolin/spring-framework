@@ -21,6 +21,15 @@ import java.util.Locale;
 import org.springframework.lang.Nullable;
 
 /**
+ *
+ * <pre>
+ *  用于解析消息的策略接口，支持此类消息的参数化和国际化。
+ *  Spring为生产提供了两种开箱即用的实现：
+ *      -| {@link org.springframework.context.support.ResourceBundleMessageSource} 建立在标准{@link java.util.ResourceBundle}之上，共享其局限性。
+ *      -| {@link org.springframework.context.support.ReloadableResourceBundleMessageSource} 高度可配置，尤其是在重新加载消息定义方面。
+ * </pre>
+ *
+ *
  * Strategy interface for resolving messages, with support for the parameterization
  * and internationalization of such messages.
  *

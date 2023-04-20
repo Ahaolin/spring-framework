@@ -68,34 +68,75 @@ public class HandlerMethod {
 	/** Logger that is available to subclasses. */
 	protected static final Log logger = LogFactory.getLog(HandlerMethod.class);
 
+    /**
+     * Bean 对象
+     */
 	private final Object bean;
 
 	@Nullable
 	private final BeanFactory beanFactory;
 
+    /**
+     * 国际化消息支持
+     */
 	@Nullable
 	private final MessageSource messageSource;
 
+    /**
+     * Bean 的类型
+     */
 	private final Class<?> beanType;
 
+    /**
+     * 方法
+     */
 	private final Method method;
 
+    /**
+     * {@link #method} 的桥接方法
+     *
+     * 详细说明
+     *
+     * 1. https://www.jianshu.com/p/250030ea9b28
+     * 2. https://blog.csdn.net/mhmyqn/article/details/47342577
+     */
 	private final Method bridgedMethod;
 
+    /**
+     * 方法参数数组
+     */
 	private final MethodParameter[] parameters;
 
+    /**
+     * 响应的状态码，即 {@link ResponseStatus#code()}
+     */
 	@Nullable
 	private HttpStatus responseStatus;
 
+    /**
+     * 响应的状态码原因，即 {@link ResponseStatus#reason()}
+     */
 	@Nullable
 	private String responseStatusReason;
 
+    /**
+     * 解析自哪个 HandlerMethod 对象
+     *
+     * 仅构造方法中传入 HandlerMethod 类型的参数适用，例如 {@link #HandlerMethod(HandlerMethod)}
+     */
 	@Nullable
 	private HandlerMethod resolvedFromHandlerMethod;
 
+    /**
+     * 父接口的方法的参数注解数组
+     */
 	@Nullable
 	private volatile List<Annotation[][]> interfaceParameterAnnotations;
 
+    /**
+     * 方法级别的描述信息 {@link HandlerMethod#initDescription(java.lang.Class, java.lang.reflect.Method)}
+     * 包含（类名称+方法名称+参数信息）
+     */
 	private final String description;
 
 
@@ -114,14 +155,20 @@ public class HandlerMethod {
 	protected HandlerMethod(Object bean, Method method, @Nullable MessageSource messageSource) {
 		Assert.notNull(bean, "Bean is required");
 		Assert.notNull(method, "Method is required");
+		// 初始化 bean
 		this.bean = bean;
-		this.beanFactory = null;
+		this.beanFactory = null; // 置空 beanFactory ，因为不用
 		this.messageSource = messageSource;
+        // 初始化 beanType 属性
 		this.beanType = ClassUtils.getUserClass(bean);
+		// 初始化 method 和 bridgedMethod 属性
 		this.method = method;
 		this.bridgedMethod = BridgeMethodResolver.findBridgedMethod(method);
+        // 设置方法为可访问 JDK9
 		ReflectionUtils.makeAccessible(this.bridgedMethod);
+        // 初始化 parameters 属性
 		this.parameters = initMethodParameters();
+		// 初始化 responseStatus、responseStatusReason 属性
 		evaluateResponseStatus();
 		this.description = initDescription(this.beanType, this.method);
 	}
@@ -139,6 +186,7 @@ public class HandlerMethod {
 		this.beanType = ClassUtils.getUserClass(bean);
 		this.method = bean.getClass().getMethod(methodName, parameterTypes);
 		this.bridgedMethod = BridgeMethodResolver.findBridgedMethod(this.method);
+        // 设置方法为可访问 JDK9
 		ReflectionUtils.makeAccessible(this.bridgedMethod);
 		this.parameters = initMethodParameters();
 		evaluateResponseStatus();
@@ -165,18 +213,24 @@ public class HandlerMethod {
 		Assert.hasText(beanName, "Bean name is required");
 		Assert.notNull(beanFactory, "BeanFactory is required");
 		Assert.notNull(method, "Method is required");
+		// 将 beanName 赋值给 bean 属性，说明 beanFactory + bean 的方式，获得 handler 对象
 		this.bean = beanName;
 		this.beanFactory = beanFactory;
 		this.messageSource = messageSource;
+        // 初始化 beanType 属性
 		Class<?> beanType = beanFactory.getType(beanName);
 		if (beanType == null) {
 			throw new IllegalStateException("Cannot resolve bean type for bean with name '" + beanName + "'");
 		}
 		this.beanType = ClassUtils.getUserClass(beanType);
+		// 初始化 method、bridgedMethod 属性
 		this.method = method;
 		this.bridgedMethod = BridgeMethodResolver.findBridgedMethod(method);
+        // 设置方法为可访问 JDK9
 		ReflectionUtils.makeAccessible(this.bridgedMethod);
+        // 初始化 parameters 属性
 		this.parameters = initMethodParameters();
+		// 初始化 responseStatus、responseStatusReason 属性
 		evaluateResponseStatus();
 		this.description = initDescription(this.beanType, this.method);
 	}
@@ -220,7 +274,9 @@ public class HandlerMethod {
 
 	private MethodParameter[] initMethodParameters() {
 		int count = this.bridgedMethod.getParameterCount();
+		// 创建 MethodParameter 数组
 		MethodParameter[] result = new MethodParameter[count];
+		// 遍历 bridgedMethod 的参数，逐个解析参数类型
 		for (int i = 0; i < count; i++) {
 			result[i] = new HandlerMethodParameter(i);
 		}
@@ -370,11 +426,13 @@ public class HandlerMethod {
 	 */
 	public HandlerMethod createWithResolvedBean() {
 		Object handler = this.bean;
+		// 如果是 bean 是 String类型，则获取对应的 handler 对象。例如，bean = userController 字符串，获取后，handler = UserController 对象
 		if (this.bean instanceof String) {
 			Assert.state(this.beanFactory != null, "Cannot resolve bean name without BeanFactory");
 			String beanName = (String) this.bean;
 			handler = this.beanFactory.getBean(beanName);
 		}
+		// 创建 HandlerMethod 对象
 		return new HandlerMethod(this, handler);
 	}
 
@@ -448,7 +506,7 @@ public class HandlerMethod {
 
 	// Support methods for use in "InvocableHandlerMethod" sub-class variants..
 
-	@Nullable
+	@Nullable // 5.0.x 该方法 为 resolveProvidedArgument
 	protected static Object findProvidedArgument(MethodParameter parameter, @Nullable Object... providedArgs) {
 		if (!ObjectUtils.isEmpty(providedArgs)) {
 			for (Object providedArg : providedArgs) {

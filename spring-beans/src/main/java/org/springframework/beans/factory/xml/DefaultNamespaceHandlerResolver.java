@@ -71,7 +71,7 @@ public class DefaultNamespaceHandlerResolver implements NamespaceHandlerResolver
      */
 	private final String handlerMappingsLocation;
 
-	/**
+    /**
      * Stores the mappings from namespace URI to NamespaceHandler class name / instance.
      *
      * NamespaceHandler 映射。
